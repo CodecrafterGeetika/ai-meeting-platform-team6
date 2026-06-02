@@ -1,26 +1,47 @@
-const nodemailer = require('nodemailer');
-const config = require('../config/config');
-const logger = require('../config/logger');
-
-const transport = nodemailer.createTransport(config.email.smtp);
-/* istanbul ignore next */
-if (config.env !== 'test') {
-  transport
-    .verify()
-    .then(() => logger.info('Connected to email server'))
-    .catch(() => logger.warn('Unable to connect to email server. Make sure you have configured the SMTP options in .env'));
-}
+import _import1 from 'axios';
+const axios = _import1;
+import _import2 from '../config/config.js';
+const config = _import2;
+import _import3 from '../config/logger.js';
+const logger = _import3;
 
 /**
- * Send an email
+ * Send an email using Brevo API
  * @param {string} to
  * @param {string} subject
  * @param {string} text
  * @returns {Promise}
  */
 const sendEmail = async (to, subject, text) => {
-  const msg = { from: config.email.from, to, subject, text };
-  await transport.sendMail(msg);
+  if (config.env === 'test') {
+    return;
+  }
+  
+  if (!config.email.brevoApiKey) {
+    logger.warn('Brevo API key not found. Email not sent.');
+    return;
+  }
+
+  const payload = {
+    sender: { email: config.email.from, name: 'AI Meeting Platform' },
+    to: [{ email: to }],
+    subject,
+    htmlContent: `<p>${text.replace(/\n/g, '<br>')}</p>`,
+    textContent: text
+  };
+
+  try {
+    const response = await axios.post('https://api.brevo.com/v3/smtp/email', payload, {
+      headers: {
+        'api-key': config.email.brevoApiKey,
+        'Content-Type': 'application/json',
+      },
+    });
+    logger.info(`Email sent successfully to ${to}. MessageId: ${response.data.messageId}`);
+  } catch (error) {
+    const errorMsg = error.response ? JSON.stringify(error.response.data) : error.message;
+    logger.error(`Error sending email to ${to}: ${errorMsg}`);
+  }
 };
 
 /**
@@ -31,7 +52,6 @@ const sendEmail = async (to, subject, text) => {
  */
 const sendResetPasswordEmail = async (to, token) => {
   const subject = 'Reset password';
-  // replace this url with the link to the reset password page of your front-end app
   const resetPasswordUrl = `http://link-to-app/reset-password?token=${token}`;
   const text = `Dear user,
 To reset your password, click on this link: ${resetPasswordUrl}
@@ -47,7 +67,6 @@ If you did not request any password resets, then ignore this email.`;
  */
 const sendVerificationEmail = async (to, token) => {
   const subject = 'Email Verification';
-  // replace this url with the link to the email verification page of your front-end app
   const verificationEmailUrl = `http://link-to-app/verify-email?token=${token}`;
   const text = `Dear user,
 To verify your email, click on this link: ${verificationEmailUrl}
@@ -55,9 +74,21 @@ If you did not create an account, then ignore this email.`;
   await sendEmail(to, subject, text);
 };
 
-module.exports = {
-  transport,
+/**
+ * Send OTP email
+ * @param {string} to
+ * @param {string} otp
+ * @returns {Promise}
+ */
+const sendOTPEmail = async (to, otp) => {
+  const subject = 'Your Verification Code';
+  const text = `Dear user,\n\nYour one-time verification code is: ${otp}\n\nThis code is valid for 10 minutes.\nIf you did not request this, please ignore this email.`;
+  await sendEmail(to, subject, text);
+};
+
+export default {
   sendEmail,
   sendResetPasswordEmail,
   sendVerificationEmail,
+  sendOTPEmail,
 };

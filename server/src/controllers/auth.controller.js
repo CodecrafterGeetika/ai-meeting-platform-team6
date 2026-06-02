@@ -1,11 +1,17 @@
-const httpStatus = require('http-status');
-const catchAsync = require('../utils/catchAsync');
-const { authService, userService, tokenService, emailService } = require('../services');
+import httpStatus from 'http-status';
+import catchAsync from '../utils/catchAsync.js';
+import ApiError from '../utils/ApiError.js';
+import _import1 from '../services/index.js';
+const { authService, userService, tokenService, emailService } = _import1;
 
 const register = catchAsync(async (req, res) => {
   const user = await userService.createUser(req.body);
-  const tokens = await tokenService.generateAuthTokens(user);
-  res.status(httpStatus.CREATED).send({ user, tokens });
+  const otp = await tokenService.generateOTPToken(user);
+  await emailService.sendOTPEmail(user.email, otp);
+  res.status(httpStatus.CREATED).send({ 
+    message: 'OTP sent to email',
+    userId: user.id 
+  });
 });
 
 const login = catchAsync(async (req, res) => {
@@ -47,7 +53,27 @@ const verifyEmail = catchAsync(async (req, res) => {
   res.status(httpStatus.NO_CONTENT).send();
 });
 
-module.exports = {
+const getMe = catchAsync(async (req, res) => {
+  res.send({ user: req.user });
+});
+
+const verifyOTP = catchAsync(async (req, res) => {
+  const { userId, otp } = req.body;
+  const user = await userService.getUserById(userId);
+  if (!user) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'User not found');
+  }
+  
+  await tokenService.verifyOTPToken(otp, userId);
+  
+  Object.assign(user, { isEmailVerified: true });
+  await user.save();
+  
+  const tokens = await tokenService.generateAuthTokens(user);
+  res.send({ user, tokens });
+});
+
+export default {
   register,
   login,
   logout,
@@ -56,4 +82,6 @@ module.exports = {
   resetPassword,
   sendVerificationEmail,
   verifyEmail,
+  getMe,
+  verifyOTP,
 };

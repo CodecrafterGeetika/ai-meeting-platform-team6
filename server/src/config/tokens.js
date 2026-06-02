@@ -3,8 +3,9 @@ const tokenTypes = {
   REFRESH: 'refresh',
   RESET_PASSWORD: 'resetPassword',
   VERIFY_EMAIL: 'verifyEmail',
+  OTP_VERIFICATION: 'otpVerification',
 };
 
-module.exports = {
+export default {
   tokenTypes,
 };

@@ -1,18 +1,21 @@
-const express = require('express');
-const helmet = require('helmet');
-const xss = require('xss-clean');
-const mongoSanitize = require('express-mongo-sanitize');
-const compression = require('compression');
-const cors = require('cors');
-const passport = require('passport');
-const httpStatus = require('http-status');
-const config = require('./config/config');
-const morgan = require('./config/morgan');
-const { jwtStrategy } = require('./config/passport');
-const { authLimiter } = require('./middlewares/rateLimiter');
-const routes = require('./routes/v1');
-const { errorConverter, errorHandler } = require('./middlewares/error');
-const ApiError = require('./utils/ApiError');
+import express from 'express';
+import helmet from 'helmet';
+import xss from 'xss-clean';
+import mongoSanitize from 'express-mongo-sanitize';
+import compression from 'compression';
+import cors from 'cors';
+import passport from 'passport';
+import httpStatus from 'http-status';
+import config from './config/config.js';
+import morgan from './config/morgan.js';
+import _import1 from './config/passport.js';
+const { jwtStrategy } = _import1;
+import _import2 from './middlewares/rateLimiter.js';
+const { authLimiter } = _import2;
+import routes from './routes/v1/index.js';
+import _import3 from './middlewares/error.js';
+const { errorConverter, errorHandler } = _import3;
+import ApiError from './utils/ApiError.js';
 
 const app = express();
 
@@ -47,11 +50,11 @@ passport.use('jwt', jwtStrategy);
 
 // limit repeated failed requests to auth endpoints
 if (config.env === 'production') {
-  app.use('/v1/auth', authLimiter);
+  app.use('/api/auth', authLimiter);
 }
 
-// v1 api routes
-app.use('/v1', routes);
+// api routes
+app.use('/api', routes);
 
 // send back a 404 error for any unknown api request
 app.use((req, res, next) => {
@@ -64,4 +67,4 @@ app.use(errorConverter);
 // handle error
 app.use(errorHandler);
 
-module.exports = app;
+export default app;

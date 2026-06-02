@@ -1,11 +1,13 @@
-const jwt = require('jsonwebtoken');
-const moment = require('moment');
-const httpStatus = require('http-status');
-const config = require('../config/config');
-const userService = require('./user.service');
-const { Token } = require('../models');
-const ApiError = require('../utils/ApiError');
-const { tokenTypes } = require('../config/tokens');
+import jwt from 'jsonwebtoken';
+import moment from 'moment';
+import httpStatus from 'http-status';
+import config from '../config/config.js';
+import userService from './user.service.js';
+import _import1 from '../models/index.js';
+const { Token } = _import1;
+import ApiError from '../utils/ApiError.js';
+import _import2 from '../config/tokens.js';
+const { tokenTypes } = _import2;
 
 /**
  * Generate token
@@ -113,11 +115,45 @@ const generateVerifyEmailToken = async (user) => {
   return verifyEmailToken;
 };
 
-module.exports = {
+/**
+ * Generate OTP token
+ * @param {User} user
+ * @returns {Promise<string>}
+ */
+const generateOTPToken = async (user) => {
+  const otp = Math.floor(100000 + Math.random() * 900000).toString(); // 6 digit string
+  const expires = moment().add(10, 'minutes'); // 10 minutes expiry
+  await saveToken(otp, user.id, expires, tokenTypes.OTP_VERIFICATION);
+  return otp;
+};
+
+/**
+ * Verify OTP token
+ * @param {string} otp
+ * @param {string} userId
+ * @returns {Promise<Token>}
+ */
+const verifyOTPToken = async (otp, userId) => {
+  const tokenDoc = await Token.findOne({ token: otp, type: tokenTypes.OTP_VERIFICATION, user: userId, blacklisted: false });
+  if (!tokenDoc) {
+    throw new ApiError(httpStatus.UNAUTHORIZED, 'Invalid or expired OTP');
+  }
+  // Check if expired
+  if (moment().isAfter(moment(tokenDoc.expires))) {
+    await tokenDoc.deleteOne();
+    throw new ApiError(httpStatus.UNAUTHORIZED, 'Invalid or expired OTP');
+  }
+  await tokenDoc.deleteOne();
+  return tokenDoc;
+};
+
+export default {
   generateToken,
   saveToken,
   verifyToken,
   generateAuthTokens,
   generateResetPasswordToken,
   generateVerifyEmailToken,
+  generateOTPToken,
+  verifyOTPToken,
 };
