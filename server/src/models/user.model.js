@@ -1,8 +1,10 @@
-const mongoose = require('mongoose');
-const validator = require('validator');
-const bcrypt = require('bcryptjs');
-const { toJSON, paginate } = require('./plugins');
-const { roles } = require('../config/roles');
+import mongoose from 'mongoose';
+import validator from 'validator';
+import bcrypt from 'bcryptjs';
+import _import1 from './plugins/index.js';
+const { toJSON, paginate } = _import1;
+import _import2 from '../config/roles.js';
+const { roles } = _import2;
 
 const userSchema = mongoose.Schema(
   {
@@ -39,6 +41,13 @@ const userSchema = mongoose.Schema(
       type: String,
       enum: roles,
       default: 'user',
+    },
+    avatar: {
+      type: String,
+      default: '',
+    },
+    refreshToken: {
+      type: String,
     },
     isEmailVerified: {
       type: Boolean,
@@ -88,4 +97,4 @@ userSchema.pre('save', async function (next) {
  */
 const User = mongoose.model('User', userSchema);
 
-module.exports = User;
+export default User;

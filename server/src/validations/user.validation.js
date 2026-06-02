@@ -1,5 +1,6 @@
-const Joi = require('joi');
-const { password, objectId } = require('./custom.validation');
+import Joi from 'joi';
+import _import1 from './custom.validation.js';
+const { password, objectId } = _import1;
 
 const createUser = {
   body: Joi.object().keys({
@@ -45,7 +46,7 @@ const deleteUser = {
   }),
 };
 
-module.exports = {
+export default {
   createUser,
   getUsers,
   getUser,

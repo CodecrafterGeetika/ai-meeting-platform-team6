@@ -1,6 +1,7 @@
-const httpStatus = require('http-status');
-const { User } = require('../models');
-const ApiError = require('../utils/ApiError');
+import httpStatus from 'http-status';
+import _import1 from '../models/index.js';
+const { User } = _import1;
+import ApiError from '../utils/ApiError.js';
 
 /**
  * Create a user
@@ -8,8 +9,17 @@ const ApiError = require('../utils/ApiError');
  * @returns {Promise<User>}
  */
 const createUser = async (userBody) => {
-  if (await User.isEmailTaken(userBody.email)) {
-    throw new ApiError(httpStatus.BAD_REQUEST, 'Email already taken');
+  const existingUser = await User.findOne({ email: userBody.email });
+  if (existingUser) {
+    if (existingUser.isEmailVerified) {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'Email already taken');
+    } else {
+      // User exists but is not verified. Update their details and proceed.
+      existingUser.name = userBody.name;
+      existingUser.password = userBody.password;
+      await existingUser.save();
+      return existingUser;
+    }
   }
   return User.create(userBody);
 };
@@ -79,7 +89,7 @@ const deleteUserById = async (userId) => {
   return user;
 };
 
-module.exports = {
+export default {
   createUser,
   queryUsers,
   getUserById,

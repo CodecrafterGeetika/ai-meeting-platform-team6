@@ -1,5 +1,6 @@
-const Joi = require('joi');
-const { password } = require('./custom.validation');
+import Joi from 'joi';
+import _import1 from './custom.validation.js';
+const { password } = _import1;
 
 const register = {
   body: Joi.object().keys({
@@ -49,7 +50,14 @@ const verifyEmail = {
   }),
 };
 
-module.exports = {
+const verifyOTP = {
+  body: Joi.object().keys({
+    userId: Joi.string().required(),
+    otp: Joi.string().required(),
+  }),
+};
+
+export default {
   register,
   login,
   logout,
@@ -57,4 +65,5 @@ module.exports = {
   forgotPassword,
   resetPassword,
   verifyEmail,
+  verifyOTP,
 };
