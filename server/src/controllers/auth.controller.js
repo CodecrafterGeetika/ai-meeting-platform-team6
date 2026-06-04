@@ -7,10 +7,12 @@ const { authService, userService, tokenService, emailService } = _import1;
 const register = catchAsync(async (req, res) => {
   const user = await userService.createUser(req.body);
   const otp = await tokenService.generateOTPToken(user);
+  console.log('Generated OTP:', otp);
+  console.log('User ID:', user.id);
   await emailService.sendOTPEmail(user.email, otp);
-  res.status(httpStatus.CREATED).send({ 
+  res.status(httpStatus.CREATED).send({
     message: 'OTP sent to email',
-    userId: user.id 
+    userId: user.id
   });
 });
 
@@ -63,12 +65,12 @@ const verifyOTP = catchAsync(async (req, res) => {
   if (!user) {
     throw new ApiError(httpStatus.NOT_FOUND, 'User not found');
   }
-  
+
   await tokenService.verifyOTPToken(otp, userId);
-  
+
   Object.assign(user, { isEmailVerified: true });
   await user.save();
-  
+
   const tokens = await tokenService.generateAuthTokens(user);
   res.send({ user, tokens });
 });

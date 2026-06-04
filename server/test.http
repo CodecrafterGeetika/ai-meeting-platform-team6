@@ -1,0 +1,44 @@
+### Create Meeting
+POST http://localhost:5000/api/meetings
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2YTFmZWUxNzY2N2JjN2ZiZmM2NmJkZWQiLCJpYXQiOjE3ODA0Nzk5NjMsImV4cCI6MTc4MDQ4MDg2MywidHlwZSI6ImFjY2VzcyJ9.tChVPEGVGbiEfI09SGlRR3DG2QiVqzvVXuSxqc8ojFA
+
+
+
+
+{
+  "title": "Team Standup",
+  "description": "Daily standup meeting",
+  "scheduledTime": "2026-06-10T09:00:00.000Z"
+}
+
+###  Get All Meetings
+GET http://localhost:5000/api/meetings
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2YTFmYWY1YmViZjVlZWE5MWM2MDg4YWMiLCJpYXQiOjE3ODA0NzUxMjcsImV4cCI6MTc4MDQ3NjAyNywidHlwZSI6ImFjY2VzcyJ9.gICFVwP4yIr5TSE8J1ETDBaokutfp4nvYsBpkZdgVIw
+
+
+### Get Single Meeting (replace MEETING_ID with id from create response)
+GET http://localhost:5000/api/meetings/6a1faf5bebf5eea91c6088ac
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2YTFmYWY1YmViZjVlZWE5MWM2MDg4YWMiLCJpYXQiOjE3ODA0NzUxMjcsImV4cCI6MTc4MDQ3NjAyNywidHlwZSI6ImFjY2VzcyJ9.gICFVwP4yIr5TSE8J1ETDBaokutfp4nvYsBpkZdgVIw
+
+### Start Meeting
+POST http://localhost:5000/api/meetings/6a1faf5bebf5eea91c6088ac/start
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2YTFmYWY1YmViZjVlZWE5MWM2MDg4YWMiLCJpYXQiOjE3ODA0NzUxMjcsImV4cCI6MTc4MDQ3NjAyNywidHlwZSI6ImFjY2VzcyJ9.gICFVwP4yIr5TSE8J1ETDBaokutfp4nvYsBpkZdgVIw
+
+### End Meeting
+POST http://localhost:5000/api/meetings/6a1faf5bebf5eea91c6088ac/end
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2YTFmYWY1YmViZjVlZWE5MWM2MDg4YWMiLCJpYXQiOjE3ODA0NzUxMjcsImV4cCI6MTc4MDQ3NjAyNywidHlwZSI6ImFjY2VzcyJ9.gICFVwP4yIr5TSE8J1ETDBaokutfp4nvYsBpkZdgVIw
+
+### Join Meeting (replace CODE with meetingCode from create response)
+POST http://localhost:5000/api/meetings/join
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2YTFmYWY1YmViZjVlZWE5MWM2MDg4YWMiLCJpYXQiOjE3ODA0NzY2MjcsImV4cCI6MTc4MDQ3NzUyNywidHlwZSI6ImFjY2VzcyJ9.wI9Pi7PMKaL_FozhROl1ytEP9LllD6BDi7OWF0Qh8kU
+
+
+{
+  "meetingCode": "AIBRWCC4"
+}
+
+### Delete Meeting
+DELETE http://localhost:5000/api/meetings/MEETING_ID
+Authorization: Bearer YOUR_TOKEN_HERE
