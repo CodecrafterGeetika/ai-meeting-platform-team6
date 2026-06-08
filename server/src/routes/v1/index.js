@@ -4,6 +4,7 @@ import userRoute from './user.route.js';
 import docsRoute from './docs.route.js';
 import config from '../../config/config.js';
 import meetingRoute from './meeting.route.js';
+import profileRoute from './profile.route.js';
 
 const router = express.Router();
 
@@ -19,6 +20,10 @@ const defaultRoutes = [
   {
     path: '/meetings',
     route: meetingRoute,
+  },
+  {
+    path: '/profile',
+    route: profileRoute,
   },
 ];
 

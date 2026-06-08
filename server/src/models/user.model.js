@@ -46,6 +46,10 @@ const userSchema = mongoose.Schema(
       type: String,
       default: '',
     },
+    avatarPublicId: {
+      type: String,
+      default: '',
+    },
     refreshToken: {
       type: String,
     },

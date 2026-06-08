@@ -2,16 +2,16 @@ import React from 'react';
 import { useTheme } from '../context/ThemeContext';
 import { Sun, Moon } from 'lucide-react';
 
-const ThemeToggle = () => {
+const ThemeToggle = ({ inline = false }) => {
   const { theme, toggleTheme } = useTheme();
 
   return (
     <button
       onClick={toggleTheme}
       style={{
-        position: 'absolute',
-        top: '2rem',
-        right: '2rem',
+        position: inline ? 'relative' : 'absolute',
+        top: inline ? 'auto' : '2rem',
+        right: inline ? 'auto' : '2rem',
         background: 'var(--glass-bg)',
         border: '1px solid var(--glass-border)',
         borderRadius: '50%',
@@ -34,3 +34,5 @@ const ThemeToggle = () => {
 };
 
 export default ThemeToggle;
+
+

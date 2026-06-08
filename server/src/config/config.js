@@ -22,6 +22,9 @@ const envVarsSchema = Joi.object()
       .description('minutes after which verify email token expires'),
     BREVO_API_KEY: Joi.string().required().description('Brevo API key for sending emails'),
     EMAIL_FROM: Joi.string().description('the from field in the emails sent by the app'),
+    CLOUDINARY_CLOUD_NAME: Joi.string().description('Cloudinary cloud name'),
+    CLOUDINARY_API_KEY: Joi.string().description('Cloudinary API key'),
+    CLOUDINARY_API_SECRET: Joi.string().description('Cloudinary API secret'),
   })
   .unknown();
 
@@ -48,5 +51,10 @@ export default {
   email: {
     brevoApiKey: envVars.BREVO_API_KEY,
     from: envVars.EMAIL_FROM,
+  },
+  cloudinary: {
+    cloudName: envVars.CLOUDINARY_CLOUD_NAME,
+    apiKey: envVars.CLOUDINARY_API_KEY,
+    apiSecret: envVars.CLOUDINARY_API_SECRET,
   },
 };

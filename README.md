@@ -103,11 +103,42 @@ CLOUDINARY_API_SECRET=your_secret
 ### Auth
 | Method | Endpoint | Description | Auth Required |
 |--------|----------|-------------|---------------|
-| POST | `/api/auth/signup` | Register user | No |
+| POST | `/api/auth/register` | Register user | No |
 | POST | `/api/auth/login` | Login user | No |
-| POST | `/api/auth/refresh` | Refresh token | No |
+| POST | `/api/auth/refresh-tokens` | Refresh token | No |
 | POST | `/api/auth/logout` | Logout user | No |
-| GET | `/api/auth/me` | Get profile | Yes |
+| GET | `/api/auth/me` | Get current user | Yes |
+
+### Profile
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| GET | `/api/profile/me` | Get profile details | Yes |
+| POST | `/api/profile` | Create new profile | Yes |
+| PUT | `/api/profile` | Update profile details | Yes |
+| POST | `/api/profile/avatar` | Upload avatar image | Yes |
+
+### Meetings
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| GET | `/api/meetings` | Get user meetings | Yes |
+| GET | `/api/meetings/:meetingId` | Get single meeting details | Yes |
+| POST | `/api/meetings` | Create/Schedule new meeting | Yes |
+| PATCH | `/api/meetings/:meetingId` | Update meeting details | Yes |
+| DELETE | `/api/meetings/:meetingId` | Delete scheduled meeting | Yes |
+| POST | `/api/meetings/join` | Join active meeting by code | Yes |
+| POST | `/api/meetings/:meetingId/start` | Start scheduled meeting | Yes |
+| POST | `/api/meetings/:meetingId/end` | End active meeting | Yes |
+
+---
+
+## 🔌 Socket.io WebRTC Signaling Events
+
+The server provides a real-time gateway on the namespace (`/`) for peer coordination and room states:
+- `join-room`: Sent when a client enters a room. Relays current participant metadata.
+- `signal-offer` / `signal-answer` / `signal-ice`: Relays SDP sessions and ICE candidates between peers.
+- `send-chat-message` / `chat-message`: Distributes instant room messages with timestamp tags.
+- `user-typing`: Broadcasts keyboard typing states inside drawers.
+- `toggle-audio` / `toggle-video`: Notifies participants when peers toggle hardware inputs.
 
 ---
 
@@ -120,10 +151,3 @@ CLOUDINARY_API_SECRET=your_secret
 5. Open a Pull Request → assign a reviewer
 
 **Never push directly to main.**
-
----
-
-
-
-
-

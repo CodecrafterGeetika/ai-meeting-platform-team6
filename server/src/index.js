@@ -3,6 +3,7 @@ setServers(['1.1.1.1', '8.8.8.8']);
 import mongoose from 'mongoose';
 import http from 'http';
 import { Server } from 'socket.io';
+import socketService from './services/socket.service.js';
 import _import1 from './app.js';
 const app = _import1;
 import _import2 from './config/config.js';
@@ -18,12 +19,7 @@ const io = new Server(server, {
   }
 });
 
-io.on('connection', (socket) => {
-  logger.info(`User connected via socket: ${socket.id}`);
-  socket.on('disconnect', () => {
-    logger.info(`User disconnected: ${socket.id}`);
-  });
-});
+socketService.handleSocket(io);
 
 mongoose.connect(config.mongoose.url, config.mongoose.options).then(() => {
   logger.info('Connected to MongoDB');
