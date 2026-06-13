@@ -2,9 +2,11 @@ import express from 'express';
 import authRoute from './auth.route.js';
 import userRoute from './user.route.js';
 import docsRoute from './docs.route.js';
-import config from '../../config/config.js';
 import meetingRoute from './meeting.route.js';
+import messageRoute from './message.route.js';
+import aiRoute from './ai.route.js';
 import profileRoute from './profile.route.js';
+import config from '../../config/config.js';
 
 const router = express.Router();
 
@@ -22,13 +24,20 @@ const defaultRoutes = [
     route: meetingRoute,
   },
   {
+    path: '/meetings',
+    route: messageRoute,
+  },
+  {
+    path: '/ai',
+    route: aiRoute,
+  },
+  {
     path: '/profile',
     route: profileRoute,
   },
 ];
 
 const devRoutes = [
-  // routes available only in development mode
   {
     path: '/docs',
     route: docsRoute,
@@ -39,7 +48,6 @@ defaultRoutes.forEach((route) => {
   router.use(route.path, route.route);
 });
 
-/* istanbul ignore next */
 if (config.env === 'development') {
   devRoutes.forEach((route) => {
     router.use(route.path, route.route);
