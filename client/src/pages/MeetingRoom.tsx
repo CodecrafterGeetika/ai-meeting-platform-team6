@@ -130,11 +130,24 @@ const MeetingRoom = () => {
       initializeSocketConnection();
 
       // Auto-start recording if enabled for this meeting AND current user is the host
-      const isHost = meeting && user && (
+      const isHost = !!(meeting && user && (
         meeting.host === user.id || 
         meeting.host === user._id || 
-        (meeting.host && typeof meeting.host === 'object' && (meeting.host._id === user.id || meeting.host._id === user._id))
-      );
+        (meeting.host && typeof meeting.host === 'object' && (
+          meeting.host.id === user.id ||
+          meeting.host.id === user._id ||
+          meeting.host._id === user.id ||
+          meeting.host._id === user._id
+        ))
+      ));
+
+      console.log('Auto-recording check:', {
+        recordMeetingEnabled: meeting?.recordMeeting,
+        isHost,
+        meetingHost: meeting?.host,
+        currentUserId: user?.id || user?._id
+      });
+
       if (meeting?.recordMeeting && isHost) {
         setTimeout(() => {
           startRecording();
