@@ -14,7 +14,7 @@ const Register = () => {
   const [step, setStep] = useState(1);
   const [otp, setOtp] = useState('');
   const [userId, setUserId] = useState('');
-  const { register, verifyOTP } = useAuth();
+  const { register, verifyOTP } = useAuth() as any;
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {

@@ -11,14 +11,15 @@ import {
 } from 'lucide-react';
 
 const Profile = () => {
-  const { user, login } = useAuth();
+  const { user, login } = useAuth() as any;
   const [profile, setProfile] = useState({
     fullName: '',
     company: '',
     designation: '',
     location: '',
     bio: '',
-    skills: ''
+    skills: '',
+    avatar: ''
   });
   
   // Custom states for mocking preferences

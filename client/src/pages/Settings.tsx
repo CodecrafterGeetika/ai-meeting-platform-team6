@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
-import { 
-  Settings, 
+import {  
   Volume2, 
   Video, 
   Mic, 
@@ -13,13 +12,11 @@ import {
   Check, 
   ShieldAlert,
   Sparkles,
-  Smartphone,
-  Info
 } from 'lucide-react';
 
 const SettingsPage = () => {
-  const { theme, toggleTheme } = useTheme();
-  const { user } = useAuth();
+  const { theme, toggleTheme } = useTheme() as any;
+  const { user } = useAuth() as any;
 
   // Settings states
   const [visualEffects, setVisualEffects] = useState(true);
@@ -50,7 +47,7 @@ const SettingsPage = () => {
   const handleTestSpeaker = () => {
     setTestPlaying(true);
     // Simulate playing a chime
-    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
     const oscillator = audioContext.createOscillator();
     const gainNode = audioContext.createGain();
 

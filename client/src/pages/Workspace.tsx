@@ -4,8 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { 
   Plus, 
   Search, 
-  Trash2, 
-  User, 
+  Trash2,  
   Video, 
   ArrowRight, 
   ArrowLeft,
@@ -13,13 +12,12 @@ import {
   Clock,
   Play,
   Briefcase,
-  Layers,
   X,
   ChevronDown
 } from 'lucide-react';
 
 const Workspace = () => {
-  const { user } = useAuth();
+  const { user } = useAuth() as any;
   const [tasks, setTasks] = useState([]);
   const [users, setUsers] = useState([]);
   const [meetings, setMeetings] = useState([]);

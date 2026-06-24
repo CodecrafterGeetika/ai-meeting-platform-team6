@@ -27,8 +27,8 @@ import {
 const MeetingRoom = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const { theme } = useTheme();
+  const { user } = useAuth() as any;
+  const { theme } = useTheme() as any;
 
   // Meeting metadata states
   const [meeting, setMeeting] = useState(null);
@@ -129,8 +129,13 @@ const MeetingRoom = () => {
       }
       initializeSocketConnection();
 
-      // Auto-start recording if enabled for this meeting
-      if (meeting?.recordMeeting) {
+      // Auto-start recording if enabled for this meeting AND current user is the host
+      const isHost = meeting && user && (
+        meeting.host === user.id || 
+        meeting.host === user._id || 
+        (meeting.host && typeof meeting.host === 'object' && (meeting.host._id === user.id || meeting.host._id === user._id))
+      );
+      if (meeting?.recordMeeting && isHost) {
         setTimeout(() => {
           startRecording();
         }, 1000);
@@ -140,8 +145,9 @@ const MeetingRoom = () => {
 
   // Setup sockets & signaling
   const initializeSocketConnection = () => {
-    const socketUrl = import.meta.env.VITE_API_URL 
-      ? new URL(import.meta.env.VITE_API_URL).origin 
+    const viteApiUrl = (import.meta as any).env.VITE_API_URL;
+    const socketUrl = viteApiUrl 
+      ? new URL(viteApiUrl).origin 
       : 'http://localhost:3000';
 
     const newSocket = io(socketUrl);
@@ -748,11 +754,11 @@ const MeetingRoom = () => {
       <div className="flex-1 flex overflow-hidden relative">
         {/* Videos Area */}
         <div className="flex-1 p-3 sm:p-6 overflow-y-auto max-w-7xl mx-auto w-full flex items-center justify-center">
-          <div className={`grid gap-6 w-full ${
+          <div className={`grid gap-3 sm:gap-6 w-full ${
             peers.length === 0 ? 'max-w-3xl grid-cols-1' :
-            peers.length === 1 ? 'grid-cols-1 md:grid-cols-2 max-w-5xl' :
-            peers.length === 2 ? 'grid-cols-1 md:grid-cols-3 max-w-6xl' :
-            'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4'
+            peers.length === 1 ? 'grid-cols-2 md:grid-cols-2 max-w-5xl' :
+            peers.length === 2 ? 'grid-cols-2 md:grid-cols-3 max-w-6xl' :
+            'grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4'
           }`}>
             {/* Local Video Tile */}
             <div className="relative bg-secondary-bg rounded-3xl overflow-hidden border border-border-color shadow-2xl flex items-center justify-center group aspect-video">

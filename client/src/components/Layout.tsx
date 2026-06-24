@@ -66,8 +66,9 @@ const Layout = () => {
   // Real-time socket listener for notifications
   useEffect(() => {
     if (user) {
-      const socketUrl = import.meta.env.VITE_API_URL 
-        ? new URL(import.meta.env.VITE_API_URL).origin 
+      const viteApiUrl = (import.meta as any).env.VITE_API_URL;
+      const socketUrl = viteApiUrl 
+        ? new URL(viteApiUrl).origin 
         : 'http://localhost:3000';
       const socket = io(socketUrl);
       
@@ -77,7 +78,7 @@ const Layout = () => {
         setNotifications(prev => [notif, ...prev]);
         // Trigger a subtle sound notification if possible
         try {
-          const context = new (window.AudioContext || window.webkitAudioContext)();
+          const context = new (window.AudioContext || (window as any).webkitAudioContext)();
           const osc = context.createOscillator();
           const gain = context.createGain();
           osc.connect(gain);
