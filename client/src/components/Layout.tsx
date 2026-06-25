@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
+import { io } from 'socket.io-client';
+import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { 
@@ -16,7 +18,8 @@ import {
   Sun,
   Moon,
   ChevronDown,
-  DeleteIcon
+  DeleteIcon,
+  Layers
 } from 'lucide-react';
 
 const Layout = () => {
@@ -28,30 +31,7 @@ const Layout = () => {
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
 
-  // Notifications state & center setup
-  const [notifications, setNotifications] = useState([
-    {
-      id: 1,
-      title: 'AI Summary Completed',
-      message: 'Transcription and meeting recap for "Product Sync" is ready.',
-      time: '10m ago',
-      unread: true
-    },
-    {
-      id: 2,
-      title: 'Upcoming Sync Meeting',
-      message: 'Meeting "AI Roadmap Discussion" starts in 5 minutes.',
-      time: '30m ago',
-      unread: true
-    },
-    {
-      id: 3,
-      title: 'Profile Saved',
-      message: 'Your personal settings were updated successfully.',
-      time: '1h ago',
-      unread: false
-    }
-  ]);
+  const [notifications, setNotifications] = useState([]);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const notifRef = useRef(null);
 
@@ -69,6 +49,53 @@ const Layout = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Fetch notifications
+  useEffect(() => {
+    fetchNotifications();
+  }, []);
+
+  const fetchNotifications = async () => {
+    try {
+      const res = await api.get('/notifications');
+      setNotifications(res.data);
+    } catch (err) {
+      console.error('Failed to fetch notifications', err);
+    }
+  };
+
+  // Real-time socket listener for notifications
+  useEffect(() => {
+    if (user) {
+      const socketUrl = import.meta.env.VITE_API_URL 
+        ? new URL(import.meta.env.VITE_API_URL).origin 
+        : 'http://localhost:3000';
+      const socket = io(socketUrl);
+      
+      socket.emit('register-user', user.id || user._id);
+
+      socket.on('new-notification', (notif) => {
+        setNotifications(prev => [notif, ...prev]);
+        // Trigger a subtle sound notification if possible
+        try {
+          const context = new (window.AudioContext || window.webkitAudioContext)();
+          const osc = context.createOscillator();
+          const gain = context.createGain();
+          osc.connect(gain);
+          gain.connect(context.destination);
+          osc.frequency.setValueAtTime(523.25, context.currentTime); // C5 note
+          gain.gain.setValueAtTime(0.1, context.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, context.currentTime + 0.4);
+          osc.start();
+          osc.stop(context.currentTime + 0.4);
+        } catch (e) {}
+      });
+
+      return () => {
+        socket.disconnect();
+      };
+    }
+  }, [user]);
+
   // Close mobile sidebar on route change
   useEffect(() => {
     setIsMobileOpen(false);
@@ -78,6 +105,7 @@ const Layout = () => {
     { path: '/', label: 'Dashboard', icon: LayoutDashboard },
     { path: '/meetings', label: 'Meetings', icon: Video },
     { path: '/create', label: 'Create', icon: Plus },
+    { path: '/workspace', label: 'Workspace', icon: Layers },
     { path: '/profile', label: 'Profile', icon: User },
   ];
 
@@ -86,12 +114,22 @@ const Layout = () => {
     navigate('/login');
   };
 
-  const handleMarkAllRead = () => {
-    setNotifications(prev => prev.map(n => ({ ...n, unread: false })));
+  const handleMarkAllRead = async () => {
+    try {
+      await api.put('/notifications/mark-read');
+      setNotifications(prev => prev.map(n => ({ ...n, unread: false })));
+    } catch (err) {
+      console.error('Failed to mark notifications as read', err);
+    }
   };
 
-  const handleDeleteNotif = (id) => {
-    setNotifications(prev => prev.filter(n => n.id !== id));
+  const handleDeleteNotif = async (id) => {
+    try {
+      await api.delete(`/notifications/${id}`);
+      setNotifications(prev => prev.filter(n => n.id !== id && n._id !== id));
+    } catch (err) {
+      console.error('Failed to delete notification', err);
+    }
   };
 
   const hasUnread = notifications.some(n => n.unread);
@@ -104,7 +142,7 @@ const Layout = () => {
   };
 
   return (
-    <div className="flex min-h-screen w-screen bg-primary-bg overflow-hidden">
+    <div className="flex min-h-screen w-full bg-primary-bg overflow-x-hidden">
       {/* Sidebar Overlay for Mobile */}
       {isMobileOpen && (
         <div 
@@ -238,29 +276,35 @@ const Layout = () => {
                         No notifications yet.
                       </div>
                     ) : (
-                      notifications.map(notif => (
-                        <div 
-                          key={notif.id} 
-                          className={`p-2.5 rounded-xl border transition-all text-left relative group ${
-                            notif.unread 
-                              ? 'bg-sidebar-active-bg border-sidebar-active-border' 
-                              : 'bg-transparent border-transparent hover:bg-feature-hover'
-                          }`}
-                        >
-                          <div className="flex justify-between items-start gap-2">
-                            <span className="font-bold text-xs text-text-main line-clamp-1">{notif.title}</span>
-                            <span className="text-[8px] text-text-muted shrink-0 mt-0.5">{notif.time}</span>
-                          </div>
-                          <p className="text-[11px] text-text-muted mt-1 leading-normal pr-4">{notif.message}</p>
-                          <button
-                            onClick={() => handleDeleteNotif(notif.id)}
-                            className="absolute right-2 bottom-2 p-0.5 rounded-full hover:bg-border-color text-text-muted hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity bg-transparent border-none cursor-pointer"
-                            title="Delete notification"
+                      notifications.map(notif => {
+                        const notifId = notif._id || notif.id;
+                        const notifTime = notif.createdAt 
+                          ? new Date(notif.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
+                          : notif.time || 'now';
+                        return (
+                          <div 
+                            key={notifId} 
+                            className={`p-2.5 rounded-xl border transition-all text-left relative group ${
+                              notif.unread 
+                                ? 'bg-sidebar-active-bg border-sidebar-active-border' 
+                                : 'bg-transparent border-transparent hover:bg-feature-hover'
+                            }`}
                           >
-                            <DeleteIcon size={10} />
-                          </button>
-                        </div>
-                      ))
+                            <div className="flex justify-between items-start gap-2">
+                              <span className="font-bold text-xs text-text-main line-clamp-1">{notif.title}</span>
+                              <span className="text-[8px] text-text-muted shrink-0 mt-0.5">{notifTime}</span>
+                            </div>
+                            <p className="text-[11px] text-text-muted mt-1 leading-normal pr-4">{notif.message}</p>
+                            <button
+                              onClick={() => handleDeleteNotif(notifId)}
+                              className="absolute right-2 bottom-2 p-0.5 rounded-full hover:bg-border-color text-text-muted hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity bg-transparent border-none cursor-pointer"
+                              title="Delete notification"
+                            >
+                              <DeleteIcon size={10} />
+                            </button>
+                          </div>
+                        );
+                      })
                     )}
                   </div>
                 </div>
@@ -310,7 +354,7 @@ const Layout = () => {
         </header>
 
         {/* Content Body */}
-        <main className="flex-1 overflow-y-auto p-6 lg:p-10">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-10">
           <Outlet />
         </main>
       </div>

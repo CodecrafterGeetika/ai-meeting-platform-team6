@@ -16,7 +16,11 @@ import {
   User,
   Users,
   ChevronRight,
-  ShieldAlert
+  ShieldAlert,
+  Briefcase,
+  X,
+  Sparkles,
+  ChevronDown
 } from 'lucide-react';
 
 const Meetings = () => {
@@ -26,12 +30,67 @@ const Meetings = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all'); // all, scheduled, active, ended
   const [joinCode, setJoinCode] = useState('');
+  
+  // Custom workspace and summary states
+  const [users, setUsers] = useState([]);
+  const [tasks, setTasks] = useState([]);
+  const [taskModal, setTaskModal] = useState(null); // { text, meetingId }
+  const [taskAssignee, setTaskAssignee] = useState('');
+  const [creatingTask, setCreatingTask] = useState(false);
+  const [generatingSummary, setGeneratingSummary] = useState(false);
+
   const { user } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
     fetchMeetings();
+    fetchUsers();
+    fetchTasks();
   }, []);
+
+  const fetchTasks = async () => {
+    try {
+      const res = await api.get('/tasks');
+      setTasks(res.data);
+    } catch (err) {
+      console.error('Failed to fetch tasks', err);
+    }
+  };
+
+  const handleDirectCreateTask = async (taskTitle) => {
+    try {
+      const res = await api.post('/tasks', {
+        title: taskTitle,
+        meetingId: selectedMeeting.id || selectedMeeting._id
+      });
+      setTasks(prev => [res.data, ...prev]);
+      alert('Task created successfully! You can now assign a team member inline.');
+    } catch (err) {
+      console.error('Failed to create task', err);
+      alert('Failed to create task.');
+    }
+  };
+
+  const handleAssigneeChange = async (taskId, assigneeId) => {
+    try {
+      const res = await api.put(`/tasks/${taskId}`, {
+        assignee: assigneeId || null
+      });
+      setTasks(prev => prev.map(t => (t.id === taskId || t._id === taskId ? res.data : t)));
+    } catch (err) {
+      console.error('Failed to update task assignee', err);
+      alert('Failed to update assignee.');
+    }
+  };
+
+  const fetchUsers = async () => {
+    try {
+      const res = await api.get('/users?limit=100');
+      setUsers(res.data.results || res.data || []);
+    } catch (err) {
+      console.error('Failed to fetch users', err);
+    }
+  };
 
   const fetchMeetings = async () => {
     try {
@@ -77,6 +136,43 @@ const Meetings = () => {
       fetchMeetings();
     } catch (error) {
       console.error('Failed to end meeting', error);
+    }
+  };
+
+  const handleGenerateSummary = async (meetingId) => {
+    setGeneratingSummary(true);
+    try {
+      const res = await api.post(`/ai/${meetingId}/ai-summary`);
+      alert('AI recap successfully generated!');
+      // Update local state
+      setMeetings(prev => prev.map(m => (m.id === meetingId || m._id === meetingId ? { ...m, summary: res.data.summary, actionItems: res.data.actionItems } : m)));
+      setSelectedMeeting(prev => (prev.id === meetingId || prev._id === meetingId ? { ...prev, summary: res.data.summary, actionItems: res.data.actionItems } : prev));
+    } catch (err) {
+      console.error('Failed to generate summary', err);
+      alert(err.response?.data?.message || 'Failed to generate summary.');
+    } finally {
+      setGeneratingSummary(false);
+    }
+  };
+
+  const handleCreateTask = async (e) => {
+    e.preventDefault();
+    if (!taskModal) return;
+    setCreatingTask(true);
+    try {
+      await api.post('/tasks', {
+        title: taskModal.text,
+        meetingId: taskModal.meetingId,
+        assignee: taskAssignee || undefined
+      });
+      alert('Action item successfully converted into a Kanban task!');
+      setTaskModal(null);
+      setTaskAssignee('');
+    } catch (err) {
+      console.error('Failed to convert action item to task', err);
+      alert('Failed to create task.');
+    } finally {
+      setCreatingTask(false);
     }
   };
 
@@ -131,23 +227,23 @@ const Meetings = () => {
           </form>
 
           {/* Search Input */}
-          <div className="relative flex items-center flex-1 sm:flex-initial shrink-0">
+          <div className="relative flex items-center flex-1 sm:flex-initial w-full sm:w-48 shrink-0">
             <input 
               type="text"
               placeholder="Search title or code..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="bg-input-bg border border-border-color rounded-xl pr-4 pl-10 text-sm text-text-main focus:outline-none focus:border-text-main w-full sm:w-48 focus:ring-1 focus:ring-text-main transition-all"
+              className="bg-input-bg border border-border-color rounded-xl pr-4 pl-10 text-sm text-text-main focus:outline-none focus:border-text-main w-full focus:ring-1 focus:ring-text-main transition-all"
             />
             <Search className="absolute left-[0.95rem] top-1/2 -translate-y-1/2 text-text-muted" size={16} />
           </div>
 
           {/* Filter Dropdown */}
-          <div className="relative flex items-center shrink-0">
+          <div className="relative flex items-center flex-1 sm:flex-initial w-full sm:w-auto shrink-0">
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="bg-input-bg border border-border-color rounded-xl pl-4 pr-10 text-sm text-text-main focus:outline-none focus:border-text-main appearance-none cursor-pointer focus:ring-1 focus:ring-text-main transition-all"
+              className="bg-input-bg border border-border-color rounded-xl pl-4 pr-10 text-sm text-text-main focus:outline-none focus:border-text-main appearance-none cursor-pointer focus:ring-1 focus:ring-text-main transition-all w-full"
               style={{ minHeight: '46px' }}
             >
               <option value="all">All Status</option>
@@ -158,7 +254,7 @@ const Meetings = () => {
             <Filter className="absolute right-4 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none" size={14} />
           </div>
 
-          <Link to="/create" className="inline-flex items-center justify-center gap-2 bg-linear-to-br from-[#3f3f46] to-[#18181b] dark:from-[#f4f4f5] dark:to-[#a1a1aa] text-white dark:text-zinc-950 rounded-2xl font-semibold text-[0.95rem] px-7 py-3 relative overflow-hidden transition-all duration-300 shadow-md min-h-[46px] hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 before:content-[''] before:absolute before:top-0 before:left-[-150%] before:w-full before:h-full before:bg-[linear-gradient(90deg,transparent,var(--shimmer-color),transparent)] before:transition-all before:duration-700 hover:before:left-[150%] cursor-pointer shrink-0" style={{ minHeight: '46px' }}>
+          <Link to="/create" className="inline-flex items-center justify-center gap-2 bg-linear-to-br from-[#3f3f46] to-[#18181b] dark:from-[#f4f4f5] dark:to-[#a1a1aa] text-white dark:text-zinc-950 rounded-2xl font-semibold text-[0.95rem] px-7 py-3 relative overflow-hidden transition-all duration-300 shadow-md min-h-[46px] hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 before:content-[''] before:absolute before:top-0 before:left-[-150%] before:w-full before:h-full before:bg-[linear-gradient(90deg,transparent,var(--shimmer-color),transparent)] before:transition-all before:duration-700 hover:before:left-[150%] cursor-pointer shrink-0 w-full sm:w-auto" style={{ minHeight: '46px' }}>
             <Plus size={16} />
             <span>New Meeting</span>
           </Link>
@@ -169,7 +265,7 @@ const Meetings = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
         {/* Left Column: Meetings list */}
-        <div className="lg:col-span-2 space-y-4 max-h-[70vh] overflow-y-auto pr-2">
+        <div className="lg:col-span-2 space-y-4 lg:max-h-[70vh] lg:overflow-y-auto pr-2">
           {loading ? (
             <div className="flex justify-center items-center py-20 bg-secondary-bg border border-border-color rounded-2xl">
               <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-text-main"></div>
@@ -276,7 +372,7 @@ const Meetings = () => {
         {/* Right Column: Selected Meeting Details / Calendar Empty State */}
         <div className="lg:col-span-1">
           {selectedMeeting ? (
-            <div className="bg-secondary-bg border border-border-color rounded-3xl p-8 shadow-card-shadow space-y-6">
+            <div className="bg-secondary-bg border border-border-color rounded-3xl p-4 sm:p-8 shadow-card-shadow space-y-6">
               <div className="border-b border-border-color pb-4">
                 <span className={`inline-flex items-center px-3 py-1 text-[10px] font-bold uppercase rounded-full border mb-2 ${
                   selectedMeeting.status === 'scheduled' 
@@ -337,6 +433,81 @@ const Meetings = () => {
                 </div>
               </div>
 
+              {/* AI Summary Section */}
+              {selectedMeeting.summary && (
+                <div className="space-y-2 border-t border-border-color pt-4 animate-fade-in">
+                  <h4 className="text-xs font-bold text-text-muted uppercase tracking-wider">AI Meeting Summary</h4>
+                  <p className="text-xs text-text-main leading-relaxed bg-primary-bg p-4.5 rounded-2xl border border-border-color">
+                    {selectedMeeting.summary}
+                  </p>
+                </div>
+              )}
+
+              {/* AI Action Items Section */}
+              {selectedMeeting.actionItems && selectedMeeting.actionItems.length > 0 && (
+                <div className="space-y-2 border-t border-border-color pt-4 animate-fade-in">
+                  <h4 className="text-xs font-bold text-text-muted uppercase tracking-wider">AI Action Items</h4>
+                  <div className="space-y-2">
+                    {selectedMeeting.actionItems.map((item, index) => {
+                      const mId = selectedMeeting.id || selectedMeeting._id;
+                      const associatedTask = tasks.find(t => 
+                        t.title === item.text && 
+                        (t.meetingId?._id === mId || t.meetingId?.id === mId || t.meetingId === mId)
+                      );
+
+                      return (
+                        <div key={index} className="flex flex-col gap-3 p-4 bg-primary-bg rounded-xl border border-border-color text-xs shadow-sm">
+                          <span className="text-text-main leading-relaxed break-words font-medium">{item.text}</span>
+                          {associatedTask ? (
+                            <div className="flex items-center gap-2 pt-2.5 border-t border-border-color/30 w-full justify-between shrink-0">
+                              <span className="text-[10px] text-text-muted font-bold uppercase">Assignee:</span>
+                              <div className="relative flex items-center">
+                                <select
+                                  value={associatedTask.assignee?.id || associatedTask.assignee?._id || associatedTask.assignee || ''}
+                                  onChange={(e) => handleAssigneeChange(associatedTask.id || associatedTask._id, e.target.value)}
+                                  className="bg-secondary-bg border border-border-color rounded-lg pl-2 pr-6 py-1.5 text-[11px] text-text-main focus:outline-none focus:border-text-main appearance-none cursor-pointer animate-fade-in"
+                                >
+                                  <option value="">Unassigned</option>
+                                  {users.map(u => (
+                                    <option key={u.id || u._id} value={u.id || u._id}>{u.name}</option>
+                                  ))}
+                                </select>
+                                <ChevronDown className="absolute right-1 text-text-muted pointer-events-none" size={12} />
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="flex justify-end pt-2.5 border-t border-border-color/30 w-full shrink-0">
+                              <button
+                                type="button"
+                                onClick={() => handleDirectCreateTask(item.text)}
+                                className="px-3.5 py-1.5 bg-accent-color hover:bg-accent-hover text-white dark:text-zinc-950 text-[10px] font-bold rounded-lg transition-all duration-200 cursor-pointer shadow-sm hover:-translate-y-0.5"
+                              >
+                                Convert to Task
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Generate AI Summary Button if transcript exists but no summary */}
+              {selectedMeeting.transcript && !selectedMeeting.summary && (
+                <div className="space-y-2 border-t border-border-color pt-4 text-center animate-fade-in">
+                  <p className="text-xs text-text-muted">This meeting has a transcript but no summary generated yet.</p>
+                  <button
+                    type="button"
+                    disabled={generatingSummary}
+                    onClick={() => handleGenerateSummary(selectedMeeting.id || selectedMeeting._id)}
+                    className="mt-2 inline-flex items-center justify-center gap-1.5 px-5 py-2.5 bg-accent-color text-primary-bg text-xs font-bold rounded-xl cursor-pointer hover:bg-accent-hover transition-all"
+                  >
+                    {generatingSummary ? 'Generating summary...' : 'Generate AI Summary'}
+                  </button>
+                </div>
+              )}
+
               {/* Control Buttons */}
               <div className="space-y-3 pt-4 border-t border-border-color">
                 {selectedMeeting.status !== 'ended' ? (
@@ -396,7 +567,7 @@ const Meetings = () => {
             </div>
           ) : (
             /* Empty State Details Pane */
-            <div className="bg-secondary-bg border border-border-color rounded-3xl p-8 shadow-card-shadow text-center py-16 space-y-4">
+            <div className="hidden lg:block bg-secondary-bg border border-border-color rounded-3xl p-8 shadow-card-shadow text-center py-16 space-y-4">
               <Calendar size={64} className="mx-auto text-text-muted opacity-50" />
               <div className="space-y-2">
                 <h3 className="text-xl font-bold text-text-main">Empty State</h3>
@@ -413,8 +584,76 @@ const Meetings = () => {
             </div>
           )}
         </div>
-
       </div>
+
+      {/* Task Creation Modal */}
+      {taskModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center p-4 z-50 animate-fade-in">
+          <div className="bg-glass-bg border border-border-color rounded-3xl w-full max-w-md shadow-2xl overflow-hidden">
+            <div className="p-6 border-b border-border-color bg-secondary-bg flex justify-between items-center">
+              <h2 className="text-lg font-bold text-text-main flex items-center gap-2">
+                <Briefcase size={20} />
+                Convert to Kanban Task
+              </h2>
+              <button 
+                type="button"
+                onClick={() => setTaskModal(null)}
+                className="p-1 hover:bg-border-color rounded-full text-text-muted hover:text-text-main bg-transparent border-none cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            
+            <form onSubmit={handleCreateTask} className="p-6 space-y-4">
+              <div className="m-0 mb-4">
+                <label className="block text-xs font-bold text-text-muted mb-1.5 uppercase tracking-wider">Task Title</label>
+                <input 
+                  type="text"
+                  required
+                  value={taskModal.text}
+                  onChange={(e) => setTaskModal({ ...taskModal, text: e.target.value })}
+                  className="w-full bg-input-bg border border-border-color rounded-xl px-4 py-2.5 text-text-main focus:outline-none focus:border-text-main"
+                />
+              </div>
+
+              <div className="m-0 mb-4">
+                <label className="block text-xs font-bold text-text-muted mb-1.5 uppercase tracking-wider">Assignee</label>
+                <div className="relative flex items-center w-full">
+                  <select
+                    value={taskAssignee}
+                    onChange={(e) => setTaskAssignee(e.target.value)}
+                    className="w-full bg-input-bg border border-border-color rounded-xl pl-3 pr-10 py-2.5 text-sm text-text-main focus:outline-none focus:border-text-main appearance-none cursor-pointer focus:ring-1 focus:ring-text-main transition-all"
+                    style={{ minHeight: '42px' }}
+                  >
+                    <option value="" className="bg-secondary-bg text-text-main">Unassigned</option>
+                    {users.map(u => (
+                      <option key={u.id || u._id} value={u.id || u._id} className="bg-secondary-bg text-text-main">{u.name}</option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none" size={16} />
+                </div>
+              </div>
+
+              <div className="flex gap-3 justify-end pt-4 border-t border-border-color">
+                <button
+                  type="button"
+                  onClick={() => setTaskModal(null)}
+                  className="inline-flex items-center justify-center gap-2 bg-glass-bg border border-border-color text-text-main rounded-2xl font-semibold text-xs px-5 py-2.5 transition-all duration-200 hover:bg-border-color hover:border-text-muted"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={creatingTask}
+                  className="inline-flex items-center justify-center gap-2 bg-linear-to-br from-[#3f3f46] to-[#18181b] dark:from-[#f4f4f5] dark:to-[#a1a1aa] text-white dark:text-zinc-950 rounded-2xl font-semibold text-xs px-6 py-2.5 relative overflow-hidden transition-all duration-300 shadow-md hover:-translate-y-0.5"
+                >
+                  {creatingTask ? 'Converting...' : 'Create Task'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

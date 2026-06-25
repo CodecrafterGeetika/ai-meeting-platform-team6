@@ -41,6 +41,7 @@ const MeetingRoom = () => {
   const [isScreenSharing, setIsScreenSharing] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [recDuration, setRecDuration] = useState(0);
+  const [isTranscribing, setIsTranscribing] = useState(false);
 
   // Panels toggle states
   const [activePanel, setActivePanel] = useState(null); // 'chat', 'participants', or null
@@ -127,6 +128,13 @@ const MeetingRoom = () => {
         localVideoRef.current.srcObject = localStreamRef.current;
       }
       initializeSocketConnection();
+
+      // Auto-start recording if enabled for this meeting
+      if (meeting?.recordMeeting) {
+        setTimeout(() => {
+          startRecording();
+        }, 1000);
+      }
     }, 100);
   };
 
@@ -404,58 +412,109 @@ const MeetingRoom = () => {
     setIsScreenSharing(false);
   };
 
+  const getSupportedMimeType = () => {
+    let mimeType = 'video/webm;codecs=vp9,opus';
+    if (typeof MediaRecorder.isTypeSupported === 'function') {
+      const candidates = [
+        'video/webm;codecs=vp9,opus',
+        'video/webm;codecs=vp8,opus',
+        'video/webm;codecs=h264,opus',
+        'video/webm;codecs=vp9',
+        'video/webm;codecs=vp8',
+        'video/webm',
+        'video/mp4;codecs=h264,aac',
+        'video/mp4'
+      ];
+      for (const candidate of candidates) {
+        if (MediaRecorder.isTypeSupported(candidate)) {
+          mimeType = candidate;
+          break;
+        }
+      }
+    }
+    return mimeType;
+  };
+
+  const startRecording = () => {
+    if (!localStreamRef.current) return;
+    recordedChunksRef.current = [];
+    const mimeType = getSupportedMimeType();
+    const options = { mimeType };
+    
+    try {
+      const recorder = new MediaRecorder(localStreamRef.current, options);
+      mediaRecorderRef.current = recorder;
+
+      recorder.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) {
+          recordedChunksRef.current.push(e.data);
+        }
+      };
+
+      recorder.onstop = () => {
+        const extension = mimeType.includes('mp4') ? 'mp4' : 'webm';
+        const blob = new Blob(recordedChunksRef.current, { type: mimeType });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = `meeting-rec-${id}-${Date.now()}.${extension}`;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => {
+          document.body.removeChild(a);
+          window.URL.revokeObjectURL(url);
+        }, 100);
+
+        // Upload audio and request transcription
+        setIsTranscribing(true);
+        const formData = new FormData();
+        formData.append('audio', blob, `meeting-audio.${extension}`);
+        api.post(`/meetings/${id}/transcribe`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        }).then(() => {
+          alert('Recording uploaded and transcribed successfully!');
+        }).catch(err => {
+          console.error('Failed to upload audio recording', err);
+          alert('Failed to upload audio recording: ' + (err.response?.data?.message || err.message));
+        }).finally(() => {
+          setIsTranscribing(false);
+        });
+      };
+
+      recorder.start(1000); // chunk every 1 sec
+      setIsRecording(true);
+      setRecDuration(0);
+
+      if (recIntervalRef.current) clearInterval(recIntervalRef.current);
+      recIntervalRef.current = setInterval(() => {
+        setRecDuration(prev => prev + 1);
+      }, 1000);
+
+    } catch (err) {
+      console.error('Error starting media recorder:', err);
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      mediaRecorderRef.current.stop();
+    }
+    if (recIntervalRef.current) {
+      clearInterval(recIntervalRef.current);
+      recIntervalRef.current = null;
+    }
+    setIsRecording(false);
+  };
+
   // Call Recording Handler
   const handleToggleRecording = () => {
     if (!isJoined) return;
 
     if (!isRecording) {
-      // Start recording
-      recordedChunksRef.current = [];
-      const options = { mimeType: 'video/webm;codecs=vp9,opus' };
-      
-      try {
-        const recorder = new MediaRecorder(localStreamRef.current, options);
-        mediaRecorderRef.current = recorder;
-
-        recorder.ondataavailable = (e) => {
-          if (e.data && e.data.size > 0) {
-            recordedChunksRef.current.push(e.data);
-          }
-        };
-
-        recorder.onstop = () => {
-          const blob = new Blob(recordedChunksRef.current, { type: 'video/webm' });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.style.display = 'none';
-          a.href = url;
-          a.download = `meeting-rec-${id}-${Date.now()}.webm`;
-          document.body.appendChild(a);
-          a.click();
-          setTimeout(() => {
-            document.body.removeChild(a);
-            window.URL.revokeObjectURL(url);
-          }, 100);
-        };
-
-        recorder.start(1000); // chunk every 1 sec
-        setIsRecording(true);
-        setRecDuration(0);
-
-        recIntervalRef.current = setInterval(() => {
-          setRecDuration(prev => prev + 1);
-        }, 1000);
-
-      } catch (err) {
-        console.error('Error starting media recorder:', err);
-      }
+      startRecording();
     } else {
-      // Stop recording
-      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-        mediaRecorderRef.current.stop();
-      }
-      clearInterval(recIntervalRef.current);
-      setIsRecording(false);
+      stopRecording();
     }
   };
 
@@ -608,7 +667,7 @@ const MeetingRoom = () => {
           </div>
 
           {/* Right Panel: Join details */}
-          <div className="space-y-6 bg-secondary-bg p-8 rounded-3xl border border-border-color shadow-2xl">
+          <div className="space-y-6 bg-secondary-bg p-5 sm:p-8 rounded-3xl border border-border-color shadow-2xl">
             <div>
               <Link to="/meetings" className="flex items-center gap-1.5 text-xs font-semibold text-text-muted hover:text-text-main transition-colors mb-3 bg-transparent border-none cursor-pointer no-underline">
                 <ChevronLeft size={14} />
@@ -662,6 +721,14 @@ const MeetingRoom = () => {
 
         {/* Action tray */}
         <div className="flex items-center gap-4 shrink-0">
+          {/* Transcribing loader */}
+          {isTranscribing && (
+            <div className="bg-blue-500/10 border border-blue-500/30 text-blue-500 px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5">
+              <div className="animate-spin rounded-full h-3 w-3 border-t-2 border-b-2 border-blue-500"></div>
+              <span>AI Processing...</span>
+            </div>
+          )}
+
           {/* Recording Timer Indicator */}
           {isRecording && (
             <div className="bg-red-500/10 border border-red-500/30 text-red-500 px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 animate-pulse">
@@ -680,7 +747,7 @@ const MeetingRoom = () => {
       {/* Main Workspace: Video Grid + Side Panels */}
       <div className="flex-1 flex overflow-hidden relative">
         {/* Videos Area */}
-        <div className="flex-1 p-6 overflow-y-auto max-w-7xl mx-auto w-full flex items-center justify-center">
+        <div className="flex-1 p-3 sm:p-6 overflow-y-auto max-w-7xl mx-auto w-full flex items-center justify-center">
           <div className={`grid gap-6 w-full ${
             peers.length === 0 ? 'max-w-3xl grid-cols-1' :
             peers.length === 1 ? 'grid-cols-1 md:grid-cols-2 max-w-5xl' :
@@ -719,7 +786,7 @@ const MeetingRoom = () => {
 
         {/* SIDE BAR PANELS (Chat / Participants) */}
         {activePanel && (
-          <aside className="w-80 bg-secondary-bg border-l border-border-color flex flex-col z-20 shrink-0 animate-fade-in-up">
+          <aside className="absolute sm:static inset-y-0 right-0 w-full sm:w-80 bg-secondary-bg border-l border-border-color flex flex-col z-20 shrink-0 shadow-2xl sm:shadow-none animate-fade-in-up">
             
             {/* Panel Header */}
             <div className="p-4 border-b border-border-color flex justify-between items-center bg-primary-bg">
@@ -859,7 +926,7 @@ const MeetingRoom = () => {
       </div>
 
       {/* Control Buttons Bar */}
-      <footer className="bg-secondary-bg border-t border-border-color p-5 flex flex-wrap justify-between items-center gap-4 z-10 shrink-0">
+      <footer className="bg-secondary-bg border-t border-border-color p-3 sm:p-5 flex flex-wrap justify-center sm:justify-between items-center gap-4 z-10 shrink-0">
         
         {/* Left Actions */}
         <div className="flex items-center gap-2.5">

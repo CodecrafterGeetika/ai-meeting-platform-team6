@@ -2,152 +2,155 @@
 
 > Real-Time Video Meetings • AI Summaries • Smart Action Items • Team Collaboration
 
-Built with the MERN stack for Zidio Development – Web Development Domain 
+Built with the MERN stack for Zidio Development – Web Development Domain.
 
 ---
 
-## 🚀 Live Demo
-[Coming soon](#)
+## 🚀 Live Demo & Deployment
+- **Frontend (Client)**: Deployed on **Vercel**
+- **Backend (Server)**: Deployed on **Render** (Containerized)
+- **Keep-Awake Mechanism**: Includes a self-pinging background loop (enabled via `RENDER_EXTERNAL_URL` or `SELF_PING_URL` env vars) and exposed `/ping` endpoints for external monitors like UptimeRobot to prevent Render containers from sleeping.
 
 ---
 
-## 📸 Screenshots
-*Coming soon*
+## 💎 Progressive Complexity Levels (LogicVeda Submission)
+
+IntellMeet is engineered to demonstrate three distinct phases of architectural complexity:
+
+### 1. Modern Frontend & Real-Time Foundations (Level 1)
+- **Vibrant UI**: SPA built with **React 19**, **TypeScript**, **Vite**, and **Tailwind CSS**, featuring dark modes, fluid micro-animations, and responsive grids designed for both mobile and desktop profiles.
+- **WebRTC Video Mesh**: Real-time peer-to-peer audio and video transmission with active device toggles and screen-sharing interfaces.
+- **Socket.io Signaling Gateway**: Bidirectional real-time signaling, room chat, active participant lists, and user typing notifications.
+
+### 2. Decoupled Systems & Containerized Resilience (Level 2)
+- **Decoupled Architecture**: Separate frontend client (deployed to Vercel CDN) and Express API (deployed to Render container cluster).
+- **Multi-Stage Docker builds**: Optimized `Dockerfile` definitions for both the [Client](file:///c:/Users/HP/Desktop/zidio/ai-meeting-platform-team6/client/Dockerfile) and [Server](file:///c:/Users/HP/Desktop/zidio/ai-meeting-platform-team6/server/Dockerfile) to isolate dev dependencies, run as secure non-root users (`node`), and reduce production release sizes.
+- **Render Blueprints**: Automated multi-container Blueprint configuration [render.yaml](file:///c:/Users/HP/Desktop/zidio/ai-meeting-platform-team6/render.yaml) for infrastructure-as-code deployments.
+
+### 3. AI/ML-Integrated Workspace (Level 3)
+- **Audio Voice Transcription**: Media recordings (`.webm` blobs) are captured and uploaded directly to the backend, which processes them using **Groq Whisper Large V3** to yield accurate speech-to-text transcripts.
+- **AI Recap Generation**: Connects to **Llama3-8b-8192** via the Groq cloud endpoint to dynamically summarize transcripts (under 150 words) and extract actionable tasks.
+- **Kanban Workspace Board**: An interactive, dynamic board to map extracted AI action items into Mongoose-persisted Kanban cards with assignee settings and status controls.
+- **Live Notifications**: Immediate browser alerts pushed via Socket.io when AI analysis completes or when tasks are assigned to teams.
 
 ---
 
 ## ⚙️ Tech Stack
 
-| Layer | Technology |
-|-------|------------|
-| Frontend | React 19 + Vite |
-| Backend | Node.js + Express |
-| Database | MongoDB + Mongoose |
-| Real-Time | Socket.io + WebRTC |
-| AI | OpenAI (Whisper + GPT) |
-| Auth | JWT + bcrypt |
-| Cache | Redis |
-| Storage | Cloudinary |
-| DevOps | Docker + GitHub Actions |
+| Layer | Technology | Description |
+| :--- | :--- | :--- |
+| **Frontend** | React 19 + TypeScript + Vite | Component architecture, static type safety, & client bundling |
+| **Backend** | Node.js + Express | RESTful API backend routing |
+| **Database** | MongoDB + Mongoose | Schema definitions and document persistence |
+| **Real-Time** | Socket.io + WebRTC | Signaling, peer communication, and notifications |
+| **AI Integration** | Groq SDK (Whisper & Llama3) | Speech-to-text and NLP summary extraction |
+| **Auth** | Passport JWT + bcrypt | Bearer token authorization and hashing |
+| **DevOps** | Docker + Render + Vercel | Multi-stage packaging and hosting |
 
 ---
 
 ## 🗂️ Project Structure
+```text
 ai-meeting-platform-team6/
-├── client/          # React frontend
-├── server/          # Express backend
+├── client/              # React frontend (Vercel)
 │   ├── src/
-│   │   ├── controllers/
-│   │   ├── models/
-│   │   ├── routes/
-│   │   ├── middleware/
-│   │   └── utils/
-│   ├── .env.example
-│   └── index.js
+│   │   ├── components/  # Layout, Navbar, Alerts
+│   │   ├── pages/       # Workspace, Meetings, Room, Login, Register
+│   │   └── services/    # api Axios interceptor configuration
+│   ├── vercel.json      # Vercel SPA rewrites
+│   └── Dockerfile       # Multi-stage Client image
+├── server/              # Express backend (Render)
+│   ├── src/
+│   │   ├── controllers/ # meeting, task, notification handlers
+│   │   ├── models/      # schemas for User, Meeting, Task, Notification
+│   │   ├── routes/      # routing registers
+│   │   └── services/    # ai.service, socket.service, meeting.service
+│   ├── .env.example     # Environment variable documentation
+│   └── Dockerfile       # Secure multi-stage Server image
+├── render.yaml          # Render Blueprint IaC
 └── README.md
+```
+
+---
+
+## 🔌 API Endpoints
+
+### 🔑 Authentication
+| Method | Endpoint | Description | Auth |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/api/auth/register` | Register new account | No |
+| `POST` | `/api/auth/login` | Log in and return tokens | No |
+| `POST` | `/api/auth/refresh` | Request new access token using refresh token | No |
+
+### 📹 Meetings & AI Recaps
+| Method | Endpoint | Description | Auth |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/api/meetings` | Get user meetings lists | Yes |
+| `POST` | `/api/meetings` | Schedule or initialize a meeting | Yes |
+| `POST` | `/api/meetings/:meetingId/transcribe` | Upload audio recording for AI Whisper transcription | Yes |
+
+### 🩺 Keep-Awake & Health Checks
+| Method | Endpoint | Description | Auth |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/ping` | Lightweight ping check to keep Render container active | No |
+| `GET` | `/api/ping` | Alternative ping check endpoint | No |
+
+### 📋 Workspace Tasks
+| Method | Endpoint | Description | Auth |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/api/tasks` | Fetch Kanban workspace board tasks | Yes |
+| `POST` | `/api/tasks` | Create task card | Yes |
+| `PUT` | `/api/tasks/:taskId` | Edit task assignee or column status | Yes |
+| `DELETE` | `/api/tasks/:taskId` | Delete task from board | Yes |
+
+### 🔔 Notifications
+| Method | Endpoint | Description | Auth |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/api/notifications` | Get user notifications list | Yes |
+| `PUT` | `/api/notifications/mark-read` | Mark all notifications as read | Yes |
+| `DELETE` | `/api/notifications/:id` | Dismiss a specific notification | Yes |
 
 ---
 
 ## 🛠️ Local Setup
 
-### Prerequisites
-- Node.js v18+
-- MongoDB (local or Atlas)
-- Git
-
-### 1. Clone the repo
+### 1. Clone & Pre-requisites
+- Requires Node.js v18+ and a MongoDB connection (local or Atlas cluster).
 ```bash
 git clone https://github.com/CodecrafterGeetika/ai-meeting-platform-team6.git
 cd ai-meeting-platform-team6
 ```
 
-### 2. Setup Server
+### 2. Configure Backend Service
 ```bash
 cd server
-npm install
+npm install   # (Or: yarn install)
 cp .env.example .env
-# Fill in your values in .env
-node index.js
-```
-
-### 3. Setup Client
-```bash
-cd client
-npm install
+# Fill required credentials in .env
 npm run dev
 ```
 
-### 4. Environment Variables
-Create `server/.env` using `server/.env.example` as reference:
-MONGO_URI=your_mongodb_uri
-PORT=5000
-JWT_SECRET=your_jwt_secret
-JWT_REFRESH_SECRET=your_refresh_secret
-CLOUDINARY_NAME=your_cloudinary_name
-CLOUDINARY_API_KEY=your_key
-CLOUDINARY_API_SECRET=your_secret
+### 3. Configure Frontend Client
+```bash
+cd ../client
+npm install
+npm run dev
+```
+Open [http://localhost:5173](http://localhost:5173) in your browser.
 
 ---
 
-## 🔒 Security
-- JWT with refresh token rotation
-- Passwords hashed with bcrypt (12 rounds)
-- Rate limiting on auth routes
-- Helmet.js for HTTP header security
-- `.env` never committed
+## 🔒 Security Summary
+- **JWT Session Security**: Short-lived access tokens (30 minutes) + rotation checks.
+- **Input Sanitization**: `xss-clean` and `express-mongo-sanitize` prevent HTML insertions and NoSQL injections.
+- **Brute-Force Shield**: Authentication rate-limiting restricts clients to 20 failed requests per 15 minutes.
+- **Privacy Compliance**: WebRTC media feeds remain encrypted peer-to-peer (DTLS-SRTP) and are never read by server nodes.
+- **Secret Isolation**: Private configurations remain strictly out of Git using `.gitignore` mappings.
 
 ---
 
-## 📋 API Endpoints
-
-### Auth
-| Method | Endpoint | Description | Auth Required |
-|--------|----------|-------------|---------------|
-| POST | `/api/auth/register` | Register user | No |
-| POST | `/api/auth/login` | Login user | No |
-| POST | `/api/auth/refresh-tokens` | Refresh token | No |
-| POST | `/api/auth/logout` | Logout user | No |
-| GET | `/api/auth/me` | Get current user | Yes |
-
-### Profile
-| Method | Endpoint | Description | Auth Required |
-|--------|----------|-------------|---------------|
-| GET | `/api/profile/me` | Get profile details | Yes |
-| POST | `/api/profile` | Create new profile | Yes |
-| PUT | `/api/profile` | Update profile details | Yes |
-| POST | `/api/profile/avatar` | Upload avatar image | Yes |
-
-### Meetings
-| Method | Endpoint | Description | Auth Required |
-|--------|----------|-------------|---------------|
-| GET | `/api/meetings` | Get user meetings | Yes |
-| GET | `/api/meetings/:meetingId` | Get single meeting details | Yes |
-| POST | `/api/meetings` | Create/Schedule new meeting | Yes |
-| PATCH | `/api/meetings/:meetingId` | Update meeting details | Yes |
-| DELETE | `/api/meetings/:meetingId` | Delete scheduled meeting | Yes |
-| POST | `/api/meetings/join` | Join active meeting by code | Yes |
-| POST | `/api/meetings/:meetingId/start` | Start scheduled meeting | Yes |
-| POST | `/api/meetings/:meetingId/end` | End active meeting | Yes |
-
----
-
-## 🔌 Socket.io WebRTC Signaling Events
-
-The server provides a real-time gateway on the namespace (`/`) for peer coordination and room states:
-- `join-room`: Sent when a client enters a room. Relays current participant metadata.
-- `signal-offer` / `signal-answer` / `signal-ice`: Relays SDP sessions and ICE candidates between peers.
-- `send-chat-message` / `chat-message`: Distributes instant room messages with timestamp tags.
-- `user-typing`: Broadcasts keyboard typing states inside drawers.
-- `toggle-audio` / `toggle-video`: Notifies participants when peers toggle hardware inputs.
-
----
-
-## 🤝 Contributing
-
-1. Clone the repo
-2. Create your branch: `git checkout -b feat/your-feature`
-3. Commit changes: `git commit -m "feat: describe your change"`
-4. Push: `git push origin feat/your-feature`
-5. Open a Pull Request → assign a reviewer
-
-**Never push directly to main.**
+## 🎯 Evaluator Demo Account
+To quickly test all core features without registering a new email or completing email OTP verification:
+1. Open the login page.
+2. Click **Sign In with Demo Account**.
+3. The platform will automatically log you in by dynamically initializing a unique demo account (e.g. `demo_xxxx@example.com` / `Password123!`) on your first visit, completely bypassing manual sign-up forms and email OTP steps.

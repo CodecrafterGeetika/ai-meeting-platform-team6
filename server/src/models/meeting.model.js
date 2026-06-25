@@ -53,6 +53,14 @@ const meetingSchema = new mongoose.Schema(
       type: String,
       default: ''
     },
+    recordMeeting: {
+      type: Boolean,
+      default: false
+    },
+    enableTranscription: {
+      type: Boolean,
+      default: true
+    },
     transcript: {
       type: String,
       default: ''

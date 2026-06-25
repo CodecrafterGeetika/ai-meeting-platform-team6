@@ -88,7 +88,7 @@ const Register = () => {
         </div>
       </div>
 
-      <div className="flex-[0_0_40%] w-full md:w-auto flex items-center justify-center p-4 md:p-8 bg-primary-bg relative">
+      <div className="flex-1 md:flex-[0_0_40%] w-full flex items-center justify-center p-4 md:p-8 bg-primary-bg relative">
         <div className="bg-glass-bg backdrop-blur-[20px] border border-glass-border rounded-[28px] p-8 md:p-12 w-full max-w-[440px] shadow-card-shadow animate-slide-up">
           <h1 className="text-3xl font-bold mb-1 text-center tracking-tight text-text-main">{step === 1 ? 'Create Account' : 'Verify Email'}</h1>
           <p className="text-text-muted text-sm text-center mb-8">{step === 1 ? 'Join us to get started' : 'We sent a code to your email'}</p>

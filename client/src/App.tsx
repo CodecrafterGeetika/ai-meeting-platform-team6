@@ -12,6 +12,7 @@ import Settings from './pages/Settings';
 import Meetings from './pages/Meetings';
 import CreateMeeting from './pages/CreateMeeting';
 import MeetingRoom from './pages/MeetingRoom';
+import Workspace from './pages/Workspace';
 import { Video } from 'lucide-react';
 import './index.css';
 
@@ -51,6 +52,7 @@ function App() {
                   <Route path="/settings" element={<Settings />} />
                   <Route path="/meetings" element={<Meetings />} />
                   <Route path="/create" element={<CreateMeeting />} />
+                  <Route path="/workspace" element={<Workspace />} />
                 </Route>
                 <Route path="/meeting-room/:id" element={<MeetingRoom />} />
               </Route>

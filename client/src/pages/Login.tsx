@@ -10,8 +10,40 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, register } = useAuth();
   const navigate = useNavigate();
+
+  const handleDemoLogin = async () => {
+    setError('');
+    setIsLoading(true);
+
+    // Retrieve or generate a unique demo email for this browser session
+    let demoEmail = localStorage.getItem('persistedDemoEmail');
+    if (!demoEmail) {
+      const rand = Math.random().toString(36).substring(2, 10);
+      demoEmail = `demo_${rand}@example.com`;
+      localStorage.setItem('persistedDemoEmail', demoEmail);
+    }
+    const demoPassword = 'Password123!';
+
+    try {
+      await login({ email: demoEmail, password: demoPassword });
+      navigate('/');
+    } catch (err) {
+      // If login fails (user does not exist yet), auto-register and try again
+      try {
+        await register({ name: 'Demo User', email: demoEmail, password: demoPassword });
+        await login({ email: demoEmail, password: demoPassword });
+        navigate('/');
+      } catch (regErr) {
+        // If registration fails, clear local storage and show error
+        localStorage.removeItem('persistedDemoEmail');
+        setError(regErr.response?.data?.message || 'Failed to initialize demo account.');
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -78,7 +110,7 @@ const Login = () => {
         </div>
       </div>
 
-      <div className="flex-[0_0_40%] w-full md:w-auto flex items-center justify-center p-4 md:p-8 bg-primary-bg relative">
+      <div className="flex-1 md:flex-[0_0_40%] w-full flex items-center justify-center p-4 md:p-8 bg-primary-bg relative">
         <div className="bg-glass-bg backdrop-blur-[20px] border border-glass-border rounded-[28px] p-8 md:p-12 w-full max-w-[440px] shadow-card-shadow animate-slide-up">
           <h1 className="text-3xl font-bold mb-1 text-center tracking-tight text-text-main">Welcome Back</h1>
           <p className="text-text-muted text-sm text-center mb-8">Sign in to your account</p>
@@ -129,6 +161,21 @@ const Login = () => {
               {isLoading ? 'Signing in...' : 'Sign In'}
             </button>
           </form>
+
+          <div className="flex items-center my-5">
+            <div className="flex-1 border-t border-border-color"></div>
+            <span className="px-3 text-xs text-text-muted font-semibold uppercase tracking-wider">or</span>
+            <div className="flex-1 border-t border-border-color"></div>
+          </div>
+
+          <button 
+            type="button" 
+            onClick={handleDemoLogin}
+            className="w-full py-[0.85rem] bg-glass-bg hover:bg-border-color text-text-main border border-border-color rounded-[14px] text-[0.95rem] font-semibold cursor-pointer transition-all duration-200 hover:-translate-y-px flex items-center justify-center gap-2"
+            disabled={isLoading}
+          >
+            Sign In with Demo Account
+          </button>
           
           <Link to="/register" className="block text-center mt-6 text-text-muted text-sm no-underline hover:text-text-main">
             Don't have an account? <span className="text-text-main font-semibold underline">Sign up</span>

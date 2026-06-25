@@ -65,7 +65,9 @@ const CreateMeeting = () => {
       await api.post('/meetings', {
         title: meeting.title,
         description: meeting.description,
-        scheduledTime: scheduledTime || undefined
+        scheduledTime: scheduledTime || undefined,
+        recordMeeting,
+        enableTranscription
       });
       navigate('/meetings');
     } catch (err) {
@@ -184,13 +186,13 @@ const CreateMeeting = () => {
         {/* Options & Actions Sidebar */}
         <div className="space-y-6">
           {/* Preferences, Email invites */}
-          <div className="bg-secondary-bg border border-border-color rounded-3xl p-8 shadow-card-shadow space-y-6">
+          <div className="bg-secondary-bg border border-border-color rounded-3xl p-4 sm:p-8 shadow-card-shadow space-y-6">
             <div className="space-y-4">
               <h3 className="text-md font-bold text-text-main">Preferences</h3>
               
               {/* Enable Transcription Toggle */}
-              <div className="flex items-center justify-between">
-                <div className="pr-4">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex-1 min-w-0">
                   <h4 className="text-sm font-semibold text-text-main">Enable AI Transcription</h4>
                   <p className="text-xs text-text-muted">Automatically convert voice to text</p>
                 </div>
@@ -210,8 +212,8 @@ const CreateMeeting = () => {
               </div>
 
               {/* Record Meeting Toggle */}
-              <div className="flex items-center justify-between">
-                <div className="pr-4">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex-1 min-w-0">
                   <h4 className="text-sm font-semibold text-text-main">Record Meeting</h4>
                   <p className="text-xs text-text-muted">Save audio & video recording</p>
                 </div>
@@ -240,7 +242,7 @@ const CreateMeeting = () => {
                   value={emailInput}
                   onChange={(e) => setEmailInput(e.target.value)}
                   placeholder="collaborator@company.com"
-                  className="flex-1 bg-input-bg border border-border-color rounded-xl px-3 py-2 text-sm text-text-main focus:outline-none focus:border-text-main"
+                  className="flex-1 min-w-0 bg-input-bg border border-border-color rounded-xl px-3 py-2 text-sm text-text-main focus:outline-none focus:border-text-main"
                   style={{ minHeight: '46px' }}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {

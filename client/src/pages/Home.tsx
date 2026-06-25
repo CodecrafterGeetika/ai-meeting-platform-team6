@@ -21,21 +21,26 @@ const Home = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [meetings, setMeetings] = useState([]);
+  const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [joinCode, setJoinCode] = useState('');
   const [showJoinModal, setShowJoinModal] = useState(false);
 
   useEffect(() => {
-    fetchMeetings();
+    fetchDashboardData();
   }, []);
 
-  const fetchMeetings = async () => {
+  const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      const res = await api.get('/meetings');
-      setMeetings(res.data);
+      const [meetingsRes, tasksRes] = await Promise.all([
+        api.get('/meetings'),
+        api.get('/tasks')
+      ]);
+      setMeetings(meetingsRes.data);
+      setTasks(tasksRes.data);
     } catch (error) {
-      console.error('Failed to fetch meetings for dashboard', error);
+      console.error('Failed to fetch dashboard data', error);
     } finally {
       setLoading(false);
     }
@@ -43,7 +48,7 @@ const Home = () => {
 
   const upcomingCount = meetings.filter(m => m.status === 'scheduled' || m.status === 'active').length;
   const finishedCount = meetings.filter(m => m.status === 'ended').length;
-  const totalMinutes = finishedCount * 45 + (upcomingCount > 0 ? 30 : 0); // simulated minutes
+  const totalMinutes = finishedCount * 45; 
 
   const handleJoinByCode = async (e) => {
     e.preventDefault();
@@ -57,23 +62,19 @@ const Home = () => {
     }
   };
 
-  // Simulated AI insights for high-fidelity UI
-  const recentInsights = [
-    {
-      id: 1,
-      meetingTitle: 'Product Sync & Design Alignment',
-      date: 'Today, 2:30 PM',
-      icon: MessageSquare,
-      summary: 'Action items: Alex to finalize gray color tokens. Sarah to review WebRTC video layout.'
-    },
-    {
-      id: 2,
-      meetingTitle: 'AI Roadmap Discussion',
-      date: 'Yesterday, 10:00 AM',
+  // Extract actual insights from summarized meetings in database
+  const recentInsights = meetings
+    .filter(m => m.summary)
+    .slice(0, 3)
+    .map((m) => ({
+      id: m.id || m._id,
+      meetingTitle: m.title,
+      date: m.scheduledTime 
+        ? new Date(m.scheduledTime).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })
+        : 'Instant Meeting',
       icon: Brain,
-      summary: 'Summary: Discussed NLP pipelines, GPT integration. Agreed to start backend implementation in Sprint 4.'
-    }
-  ];
+      summary: m.summary
+    }));
 
   return (
     <div className="w-full space-y-8 animate-fade-in-up">
@@ -117,11 +118,11 @@ const Home = () => {
         </div>
 
         {/* Metric 3 */}
-        <div className="bg-secondary-bg border border-border-color rounded-3xl p-8 shadow-card-shadow flex justify-between items-center group cursor-pointer hover:border-text-muted transition-all">
+        <div className="bg-secondary-bg border border-border-color rounded-3xl p-8 shadow-card-shadow flex justify-between items-center group cursor-pointer hover:border-text-muted transition-all" onClick={() => navigate('/meetings')}>
           <div className="space-y-2">
             <p className="text-xs font-bold text-text-muted uppercase tracking-wider">Recent AI Insights</p>
             <h2 className="text-4xl font-extrabold text-text-main">
-              {loading ? '...' : (finishedCount * 3 + 2)} <span className="text-sm font-semibold text-text-muted">items</span>
+              {loading ? '...' : recentInsights.length} <span className="text-sm font-semibold text-text-muted">recap{recentInsights.length === 1 ? '' : 's'}</span>
             </h2>
           </div>
           <button className="p-3 bg-primary-bg text-text-main rounded-xl border-none cursor-default flex items-center justify-center">
@@ -141,36 +142,45 @@ const Home = () => {
             </h3>
             
             <div className="space-y-4">
-              {recentInsights.map((insight) => {
-                const Icon = insight.icon;
-                return (
-                  <div 
-                    key={insight.id} 
-                    className="p-4 bg-primary-bg border border-border-color rounded-2xl space-y-2 hover:border-text-muted transition-all"
-                  >
-                    <div className="flex items-center gap-2">
-                      <div className="p-2 bg-secondary-bg border border-border-color text-text-main rounded-lg">
-                        <Icon size={16} />
+              {recentInsights.length === 0 ? (
+                <div className="text-center py-6 text-xs text-text-muted/60 italic">
+                  No meeting recaps available yet. Transcribe and summarize a meeting to generate insights.
+                </div>
+              ) : (
+                recentInsights.map((insight) => {
+                  const Icon = insight.icon;
+                  return (
+                    <div 
+                      key={insight.id} 
+                      className="p-4 bg-primary-bg border border-border-color rounded-2xl space-y-2 hover:border-text-muted transition-all"
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className="p-2 bg-secondary-bg border border-border-color text-text-main rounded-lg">
+                          <Icon size={16} />
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-bold text-text-main line-clamp-1">{insight.meetingTitle}</h4>
+                          <p className="text-[10px] text-text-muted">{insight.date}</p>
+                        </div>
                       </div>
-                      <div>
-                        <h4 className="text-sm font-bold text-text-main line-clamp-1">{insight.meetingTitle}</h4>
-                        <p className="text-[10px] text-text-muted">{insight.date}</p>
-                      </div>
+                      <p className="text-xs text-text-muted leading-relaxed line-clamp-3">
+                        {insight.summary}
+                      </p>
                     </div>
-                    <p className="text-xs text-text-muted leading-relaxed">
-                      {insight.summary}
-                    </p>
-                  </div>
-                );
-              })}
+                  );
+                })
+              )}
 
-              <div className="p-4 bg-primary-bg border border-border-color rounded-2xl flex items-center justify-between hover:border-text-muted transition-all cursor-pointer">
+              <div 
+                className="p-4 bg-primary-bg border border-border-color rounded-2xl flex items-center justify-between hover:border-text-muted transition-all cursor-pointer"
+                onClick={() => navigate('/workspace')}
+              >
                 <div className="flex items-center gap-2">
                   <CheckSquare size={18} className="text-text-muted" />
                   <span className="text-xs font-bold text-text-main">Total Pending Tasks</span>
                 </div>
                 <span className="text-xs font-bold bg-secondary-bg border border-border-color px-2.5 py-1 rounded-lg text-text-main">
-                  7 action items
+                  {loading ? '...' : tasks.filter(t => t.status !== 'done').length} task{tasks.filter(t => t.status !== 'done').length === 1 ? '' : 's'}
                 </span>
               </div>
             </div>

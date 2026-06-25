@@ -4,7 +4,9 @@ const createMeeting = {
   body: Joi.object().keys({
     title: Joi.string().required(),
     description: Joi.string().allow(''),
-    scheduledTime: Joi.date()
+    scheduledTime: Joi.date(),
+    recordMeeting: Joi.boolean(),
+    enableTranscription: Joi.boolean()
   })
 };
 
@@ -15,7 +17,9 @@ const updateMeeting = {
   body: Joi.object().keys({
     title: Joi.string(),
     description: Joi.string().allow(''),
-    scheduledTime: Joi.date()
+    scheduledTime: Joi.date(),
+    recordMeeting: Joi.boolean(),
+    enableTranscription: Joi.boolean()
   })
 };
 

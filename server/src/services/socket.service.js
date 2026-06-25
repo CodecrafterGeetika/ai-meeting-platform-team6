@@ -2,13 +2,45 @@
 // Format: socketId -> { userId, userName, userAvatar, roomId, audioEnabled, videoEnabled }
 const activeParticipants = new Map();
 
+// Map of userId -> socketId for live notifications
+const userSockets = new Map();
+
+let ioInstance = null;
+
+/**
+ * Send real-time notification to a specific user if they are online
+ * @param {string} userId 
+ * @param {object} notification 
+ */
+export const sendLiveNotification = (userId, notification) => {
+  if (ioInstance && userId) {
+    const socketId = userSockets.get(userId.toString());
+    if (socketId) {
+      ioInstance.to(socketId).emit('new-notification', notification);
+      console.log(`Live notification emitted to user: ${userId}`);
+    } else {
+      console.log(`User ${userId} is offline, socket notification skipped.`);
+    }
+  }
+};
+
 /**
  * Handle Socket.io connections and events
  * @param {Server} io 
  */
 export const handleSocket = (io) => {
+  ioInstance = io;
+
   io.on('connection', (socket) => {
     console.log(`User connected via socket: ${socket.id}`);
+
+    // Register user for global notifications
+    socket.on('register-user', (userId) => {
+      if (userId) {
+        userSockets.set(userId.toString(), socket.id);
+        console.log(`Registered user notification socket: ${userId} -> ${socket.id}`);
+      }
+    });
 
     // Join a meeting room
     socket.on('join-room', ({ roomId, userId, userName, userAvatar, audioEnabled = true, videoEnabled = true }) => {
@@ -25,6 +57,11 @@ export const handleSocket = (io) => {
       };
 
       activeParticipants.set(socket.id, participantInfo);
+      
+      // Also ensure they are registered globally on room join
+      if (userId) {
+        userSockets.set(userId.toString(), socket.id);
+      }
       
       console.log(`User ${userName} (${userId}) joined room ${roomId} (Socket: ${socket.id})`);
 
@@ -116,6 +153,15 @@ export const handleSocket = (io) => {
 
     // Disconnect handler
     socket.on('disconnect', () => {
+      // Clean up userSockets mapping
+      for (const [uid, sid] of userSockets.entries()) {
+        if (sid === socket.id) {
+          userSockets.delete(uid);
+          console.log(`Unregistered user notification socket: ${uid}`);
+          break;
+        }
+      }
+
       const user = activeParticipants.get(socket.id);
       if (user) {
         const { roomId, userName } = user;
@@ -135,5 +181,6 @@ export const handleSocket = (io) => {
 };
 
 export default {
-  handleSocket
+  handleSocket,
+  sendLiveNotification
 };

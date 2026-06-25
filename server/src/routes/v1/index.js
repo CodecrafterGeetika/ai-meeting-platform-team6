@@ -3,9 +3,10 @@ import authRoute from './auth.route.js';
 import userRoute from './user.route.js';
 import docsRoute from './docs.route.js';
 import meetingRoute from './meeting.route.js';
-import messageRoute from './message.route.js';
 import aiRoute from './ai.route.js';
 import profileRoute from './profile.route.js';
+import taskRoute from './task.route.js';
+import notificationRoute from './notification.route.js';
 import config from '../../config/config.js';
 
 const router = express.Router();
@@ -24,16 +25,20 @@ const defaultRoutes = [
     route: meetingRoute,
   },
   {
-    path: '/meetings',
-    route: messageRoute,
-  },
-  {
     path: '/ai',
     route: aiRoute,
   },
   {
     path: '/profile',
     route: profileRoute,
+  },
+  {
+    path: '/tasks',
+    route: taskRoute,
+  },
+  {
+    path: '/notifications',
+    route: notificationRoute,
   },
 ];
 

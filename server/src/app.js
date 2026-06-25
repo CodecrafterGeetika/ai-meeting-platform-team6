@@ -53,6 +53,14 @@ if (config.env === 'production') {
   app.use('/api/auth', authLimiter);
 }
 
+// ping endpoints for health checks / keep-alive
+app.get('/ping', (req, res) => {
+  res.status(200).send('pong');
+});
+app.get('/api/ping', (req, res) => {
+  res.status(200).send('pong');
+});
+
 // api routes
 app.use('/api', routes);
 
