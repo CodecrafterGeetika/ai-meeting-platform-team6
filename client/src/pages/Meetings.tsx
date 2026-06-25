@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { toast } from 'react-hot-toast';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -10,17 +11,12 @@ import {
   Calendar, 
   Plus, 
   Search, 
-  Filter,
-  Info,
-  Clock,
-  User,
-  Users,
-  ChevronRight,
-  ShieldAlert,
-  Briefcase,
-  X,
-  Sparkles,
-  ChevronDown
+  Filter, 
+  Clock, 
+  User, 
+  Briefcase, 
+  X, 
+  ChevronDown 
 } from 'lucide-react';
 
 const Meetings = () => {
@@ -39,7 +35,7 @@ const Meetings = () => {
   const [creatingTask, setCreatingTask] = useState(false);
   const [generatingSummary, setGeneratingSummary] = useState(false);
 
-  const { user } = useAuth();
+  const { user } = useAuth() as any;
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -64,10 +60,10 @@ const Meetings = () => {
         meetingId: selectedMeeting.id || selectedMeeting._id
       });
       setTasks(prev => [res.data, ...prev]);
-      alert('Task created successfully! You can now assign a team member inline.');
+      toast.success('Task created successfully! You can now assign a team member inline.');
     } catch (err) {
       console.error('Failed to create task', err);
-      alert('Failed to create task.');
+      toast.error('Failed to create task.');
     }
   };
 
@@ -79,7 +75,7 @@ const Meetings = () => {
       setTasks(prev => prev.map(t => (t.id === taskId || t._id === taskId ? res.data : t)));
     } catch (err) {
       console.error('Failed to update task assignee', err);
-      alert('Failed to update assignee.');
+      toast.error('Failed to update assignee.');
     }
   };
 
@@ -143,13 +139,13 @@ const Meetings = () => {
     setGeneratingSummary(true);
     try {
       const res = await api.post(`/ai/${meetingId}/ai-summary`);
-      alert('AI recap successfully generated!');
+      toast.success('AI recap successfully generated!');
       // Update local state
       setMeetings(prev => prev.map(m => (m.id === meetingId || m._id === meetingId ? { ...m, summary: res.data.summary, actionItems: res.data.actionItems } : m)));
       setSelectedMeeting(prev => (prev.id === meetingId || prev._id === meetingId ? { ...prev, summary: res.data.summary, actionItems: res.data.actionItems } : prev));
     } catch (err) {
       console.error('Failed to generate summary', err);
-      alert(err.response?.data?.message || 'Failed to generate summary.');
+      toast.error(err.response?.data?.message || 'Failed to generate summary.');
     } finally {
       setGeneratingSummary(false);
     }
@@ -165,12 +161,12 @@ const Meetings = () => {
         meetingId: taskModal.meetingId,
         assignee: taskAssignee || undefined
       });
-      alert('Action item successfully converted into a Kanban task!');
+      toast.success('Action item successfully converted into a Kanban task!');
       setTaskModal(null);
       setTaskAssignee('');
     } catch (err) {
       console.error('Failed to convert action item to task', err);
-      alert('Failed to create task.');
+      toast.error('Failed to create task.');
     } finally {
       setCreatingTask(false);
     }
@@ -184,7 +180,7 @@ const Meetings = () => {
       navigate(`/meeting-room/${res.data.id || res.data._id}`);
     } catch (error) {
       console.error('Failed to join meeting', error);
-      alert(error.response?.data?.message || 'Failed to join meeting');
+      toast.error(error.response?.data?.message || 'Failed to join meeting');
     }
   };
 
@@ -457,7 +453,7 @@ const Meetings = () => {
 
                       return (
                         <div key={index} className="flex flex-col gap-3 p-4 bg-primary-bg rounded-xl border border-border-color text-xs shadow-sm">
-                          <span className="text-text-main leading-relaxed break-words font-medium">{item.text}</span>
+                          <span className="text-text-main leading-relaxed wrap-break-word font-medium">{item.text}</span>
                           {associatedTask ? (
                             <div className="flex items-center gap-2 pt-2.5 border-t border-border-color/30 w-full justify-between shrink-0">
                               <span className="text-[10px] text-text-muted font-bold uppercase">Assignee:</span>
@@ -480,7 +476,7 @@ const Meetings = () => {
                               <button
                                 type="button"
                                 onClick={() => handleDirectCreateTask(item.text)}
-                                className="px-3.5 py-1.5 bg-accent-color hover:bg-accent-hover text-white dark:text-zinc-950 text-[10px] font-bold rounded-lg transition-all duration-200 cursor-pointer shadow-sm hover:-translate-y-0.5"
+                                className="px-3.5 py-1.5 bg-accent-color hover:bg-accent-hover text-primary-bg text-[10px] font-bold rounded-lg transition-all duration-200 cursor-pointer shadow-sm hover:-translate-y-0.5"
                               >
                                 Convert to Task
                               </button>

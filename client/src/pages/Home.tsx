@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { toast } from 'react-hot-toast';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -58,7 +59,7 @@ const Home = () => {
       navigate(`/meeting-room/${res.data.id || res.data._id}`);
     } catch (error) {
       console.error('Failed to join meeting', error);
-      alert(error.response?.data?.message || 'Failed to join meeting. Please check the code.');
+      toast.error(error.response?.data?.message || 'Failed to join meeting. Please check the code.');
     }
   };
 
@@ -206,7 +207,7 @@ const Home = () => {
               </Link>
 
               <button 
-                onClick={() => alert('Recording upload module coming soon.')}
+                onClick={() => toast.success('Recording upload module coming soon.')}
                 className="inline-flex items-center justify-center gap-2 bg-glass-bg border border-border-color text-text-main rounded-2xl font-semibold text-[0.95rem] px-6 py-3 transition-all duration-200 min-h-[46px] hover:bg-border-color hover:border-text-muted w-full cursor-pointer"
               >
                 <Upload size={18} />

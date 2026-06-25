@@ -31,6 +31,7 @@ const pingSelf = (url) => {
   });
 };
 
+mongoose.set('strictQuery', false);
 mongoose.connect(config.mongoose.url, config.mongoose.options).then(() => {
   logger.info('Connected to MongoDB');
   server.listen(config.port, () => {

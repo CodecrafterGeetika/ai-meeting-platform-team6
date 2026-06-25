@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { toast } from 'react-hot-toast';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { 
   Plus, 
   Search, 
-  Trash2, 
-  User, 
+  Trash2,  
   Video, 
   ArrowRight, 
   ArrowLeft,
@@ -13,13 +13,12 @@ import {
   Clock,
   Play,
   Briefcase,
-  Layers,
   X,
   ChevronDown
 } from 'lucide-react';
 
 const Workspace = () => {
-  const { user } = useAuth();
+  const { user } = useAuth() as any;
   const [tasks, setTasks] = useState([]);
   const [users, setUsers] = useState([]);
   const [meetings, setMeetings] = useState([]);
@@ -90,7 +89,7 @@ const Workspace = () => {
       setNewTask({ title: '', description: '', assignee: '', meetingId: '' });
     } catch (error) {
       console.error('Error creating task:', error);
-      alert('Failed to create task. Please try again.');
+      toast.error('Failed to create task. Please try again.');
     } finally {
       setFormLoading(false);
     }

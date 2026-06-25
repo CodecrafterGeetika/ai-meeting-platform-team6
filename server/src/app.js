@@ -54,6 +54,9 @@ if (config.env === 'production') {
 }
 
 // ping endpoints for health checks / keep-alive
+app.get('/', (req, res) => {
+  res.status(200).json({ status: 'ok', message: 'IntellMeet API is running' });
+});
 app.get('/ping', (req, res) => {
   res.status(200).send('pong');
 });

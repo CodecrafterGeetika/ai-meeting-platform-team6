@@ -31,9 +31,15 @@ const createProfile = async (userId, profileBody) => {
  * @returns {Promise<Profile>}
  */
 const getProfileByUserId = async (userId) => {
-  const profile = await Profile.findOne({ userId }).populate('userId', 'email name');
+  let profile = await Profile.findOne({ userId }).populate('userId', 'email name');
   if (!profile) {
-    throw new ApiError(httpStatus.NOT_FOUND, 'Profile not found');
+    // Auto-create a blank profile if it doesn't exist
+    const user = await User.findById(userId);
+    profile = await Profile.create({ 
+      userId, 
+      fullName: user ? user.name : 'Unknown User' 
+    });
+    profile = await profile.populate('userId', 'email name');
   }
   return profile;
 };

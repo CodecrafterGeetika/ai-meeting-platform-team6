@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { toast } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { 
@@ -23,7 +24,6 @@ const CreateMeeting = () => {
   
   // Custom interactive states
   const [enableTranscription, setEnableTranscription] = useState(true);
-  const [recordMeeting, setRecordMeeting] = useState(false);
   const [emailInput, setEmailInput] = useState('');
   const [participants, setParticipants] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -33,7 +33,7 @@ const CreateMeeting = () => {
     e.preventDefault();
     if (!emailInput.trim()) return;
     if (!emailInput.includes('@')) {
-      alert('Please enter a valid email address.');
+      toast.error('Please enter a valid email address.');
       return;
     }
     if (!participants.includes(emailInput.trim())) {
@@ -66,7 +66,7 @@ const CreateMeeting = () => {
         title: meeting.title,
         description: meeting.description,
         scheduledTime: scheduledTime || undefined,
-        recordMeeting,
+        recordMeeting: false,
         enableTranscription
       });
       navigate('/meetings');
@@ -211,26 +211,6 @@ const CreateMeeting = () => {
                 </div>
               </div>
 
-              {/* Record Meeting Toggle */}
-              <div className="flex items-center justify-between gap-4">
-                <div className="flex-1 min-w-0">
-                  <h4 className="text-sm font-semibold text-text-main">Record Meeting</h4>
-                  <p className="text-xs text-text-muted">Save audio & video recording</p>
-                </div>
-                <div className="relative inline-block w-12 h-[26px] shrink-0">
-                  <input 
-                    type="checkbox" 
-                    checked={recordMeeting}
-                    onChange={(e) => setRecordMeeting(e.target.checked)}
-                    className="sr-only peer"
-                    id="record-toggle"
-                  />
-                  <label 
-                    htmlFor="record-toggle"
-                    className="absolute cursor-pointer inset-0 bg-border-color border border-border-color rounded-full transition-colors duration-300 peer-checked:bg-toggle-on-bg peer-checked:border-toggle-on-bg after:content-[''] after:absolute after:h-[18px] after:w-[18px] after:left-[3px] after:bottom-[3px] after:bg-toggle-thumb after:rounded-full after:shadow-md after:transition-transform after:duration-300 peer-checked:after:translate-x-[22px]"
-                  />
-                </div>
-              </div>
             </div>
 
             {/* Invite Email Box */}

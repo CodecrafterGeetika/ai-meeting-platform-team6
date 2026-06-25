@@ -32,7 +32,7 @@ const generateMeetingSummary = async (transcript) => {
 
   try {
     const response = await groq.chat.completions.create({
-      model: 'llama3-8b-8192',
+      model: 'llama-3.3-70b-versatile',
       messages: [
         {
           role: 'system',
@@ -65,7 +65,7 @@ const extractActionItems = async (transcript) => {
 
   try {
     const response = await groq.chat.completions.create({
-      model: 'llama3-8b-8192',
+      model: 'llama-3.1-8b-instant',
       messages: [
         {
           role: 'system',
